@@ -1,0 +1,32 @@
+ApplicationIdPath:
+  in: path
+  name: app_id
+  required: true
+  description: |
+    アプリケーションID
+  schema:
+    type: string
+    format: uuid
+    example: 01234567-89ab-cdef-0123-456789abcdef
+
+ClientIdPath:
+  in: path
+  name: client_id
+  required: true
+  description: |
+    クライアントID
+  schema:
+    type: string
+    format: uuid
+    example: 01234567-89ab-cdef-0123-456789abcdef
+
+SdpIdPath:
+  in: path
+  name: sdp_id
+  required: true
+  description: |
+    SDP ID
+  schema:
+    type: string
+    format: uuid
+    example: 01234567-89ab-cdef-0123-456789abcdef

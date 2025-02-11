@@ -1,0 +1,22 @@
+path:
+  delete:
+    summary: SDP Exchangeのレコードを削除する
+    operationId: deleteSDPExchange
+    description: |
+      SDP Exchangeレコードを削除する
+
+      物理削除のため、復元はできません
+    tags:
+      - SDP Exchange
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/SdpIdPath'
+    responses:
+      '204':
+        description: 削除成功
+      '401':
+        $ref: '#/components/responses/Error'
+
+components:
+  $ref: '../../openapi.yaml#/components'

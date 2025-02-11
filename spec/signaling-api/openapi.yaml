@@ -1,0 +1,107 @@
+openapi: 3.0.3
+
+info:
+  title: BIDS WebRTC Signaling API
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080/signaling
+    description: ローカル開発環境(Docker)
+  - url: https://bids-rtc.t0r.dev/signaling
+    description: 本番環境
+
+tags:
+  - name: API Info
+    description: APIの情報取得用
+  - name: Application Management
+    description: アプリケーションの管理用
+  - name: Client Management
+    description: クライアントの管理用
+  - name: SDP Exchange
+    description: SDPの交換用
+
+paths:
+  /:
+    $ref: "./paths/index.yaml#/path"
+
+  /apps/{app_id}:
+    $ref: "./paths/apps/app_id.yaml#/path"
+
+  /clients:
+    $ref: "./paths/clients/index.yaml#/path"
+  /clients/{client_id}:
+    $ref: "./paths/clients/client_id.yaml#/path"
+
+  /exchange/{sdp_id}:
+    $ref: "./paths/signaling/sdp_id.yaml#/path"
+  /offer:
+    $ref: "./paths/signaling/offer.yaml#/path"
+  /answer:
+    $ref: "./paths/signaling/answer.yaml#/path"
+
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ApiInfo:
+      $ref: "./schemas/ApiInfo.yaml#/ApiInfo"
+
+    ApplicationInfo:
+      $ref: "./schemas/ApplicationInfo.yaml#/ApplicationInfo"
+    ApplicationInfoArray:
+      $ref: "./schemas/ApplicationInfo.yaml#/ApplicationInfoArray"
+    ClientInfo:
+      $ref: "./schemas/ClientInfo.yaml#/ClientInfo"
+    ClientInfoArray:
+      $ref: "./schemas/ClientInfo.yaml#/ClientInfoArray"
+
+    SDPOfferInfo:
+      $ref: "./schemas/SDPOfferInfo.yaml#/SDPOfferInfo"
+    SDPOfferInfoArray:
+      $ref: "./schemas/SDPOfferInfo.yaml#/SDPOfferInfoArray"
+    PostSDPOfferInfoRequestBody:
+      $ref: "./schemas/SDPOfferInfo.yaml#/PostSDPOfferInfoRequestBody"
+    PostSDPOfferInfoResponse:
+      $ref: "./schemas/SDPOfferInfo.yaml#/PostSDPOfferInfoResponse"
+    SDPAnswerInfo:
+      $ref: "./schemas/SDPAnswerInfo.yaml#/SDPAnswerInfo"
+    SDPAnswerInfoArray:
+      $ref: "./schemas/SDPAnswerInfo.yaml#/SDPAnswerInfoArray"
+
+  parameters:
+    ApplicationIdPath:
+      $ref: "./parameters/id.yaml#/ApplicationIdPath"
+    ClientIdPath:
+      $ref: "./parameters/id.yaml#/ClientIdPath"
+    SdpIdPath:
+      $ref: "./parameters/id.yaml#/SdpIdPath"
+
+    PageNumber:
+      $ref: "./parameters/paging.yaml#/PageNumber"
+    PageSize:
+      $ref: "./parameters/paging.yaml#/PageSize"
+    PageTopId:
+      $ref: "./parameters/paging.yaml#/PageTopId"
+
+  headers:
+    X-Total-Count:
+      $ref: "./parameters/paging.yaml#/X-Total-Count"
+
+  responses:
+    Error:
+      description: エラー
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: NotFound/Unauthorized
+            required:
+              - message

@@ -1,0 +1,55 @@
+path:
+  get:
+    summary: SDP Answer取得
+    operationId: getAnswer
+    description: |
+      自身が登録したSDP Offerに対するAnswerを取得する
+    tags:
+      - SDP Exchange
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PostSDPOfferInfoRequestBody'
+    responses:
+      '200':
+        description: Answer登録成功
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SDPAnswerInfo'
+      '204':
+        description: Answer未登録
+      '401':
+        $ref: '#/components/responses/Error'
+      '404':
+        $ref: '#/components/responses/Error'
+
+  post:
+    summary: SDP Answer登録
+    operationId: registerAnswer
+    description: |
+      SDP Answerを登録する
+
+      ここでAnswerを登録しなかった場合、接続しないものとしてanswer登録待機を解除します。
+    tags:
+      - SDP Exchange
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SDPAnswerInfoArray'
+    responses:
+      '201':
+        description: Answer登録成功
+      '401':
+        $ref: '#/components/responses/Error'
+
+components:
+  $ref: '../../openapi.yaml#/components'

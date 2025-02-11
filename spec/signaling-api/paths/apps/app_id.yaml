@@ -1,0 +1,20 @@
+path:
+  get:
+    summary: Applicationの情報を取得する
+    operationId: getApplicationInfo
+    description: |
+      IDを指定してアプリケーションの情報を取得する
+    tags:
+      - Application Management
+    parameters:
+      - $ref: '#/components/parameters/ApplicationIdPath'
+    responses:
+      '200':
+        description: そのアプリケーションの情報
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplicationInfo'
+
+components:
+  $ref: '../../openapi.yaml#/components'

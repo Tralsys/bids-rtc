@@ -1,0 +1,32 @@
+SDPAnswerInfo:
+  type: object
+  title: SDP AnswerInfo
+  required:
+    - sdp_id
+    - answer_client_id
+    - answer
+  properties:
+    sdp_id:
+      type: string
+      format: uuid
+      description: |
+        SDP ID
+    answer_client_id:
+      type: string
+      readOnly: true
+      description: |
+        名前
+    answer:
+      type: string
+      format: byte
+      description: |
+        Answer SDP (Base64 encoded)
+
+SDPAnswerInfoArray:
+  type: array
+  title: AnswerInfoArray
+  items:
+    $ref: '#/components/schemas/SDPAnswerInfo'
+
+components:
+  $ref: '../openapi.yaml#/components'

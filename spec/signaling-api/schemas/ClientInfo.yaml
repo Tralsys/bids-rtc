@@ -1,0 +1,43 @@
+ClientInfo:
+  type: object
+  title: ClientInfo
+  required:
+    - app_id
+  properties:
+    app_id:
+      type: string
+      format: uuid
+      readOnly: true
+      description: |
+        アプリID
+    client_id:
+      type: string
+      format: uuid
+      readOnly: true
+      description: |
+        クライアントID
+    name:
+      type: string
+      description: |
+        名前
+    created_at:
+      type: string
+      format: date-time
+      readOnly: true
+      description: |
+        作成日時
+    last_used_at:
+      type: string
+      format: date-time
+      readOnly: true
+      description: |
+        最終利用日時
+
+ClientInfoArray:
+  type: array
+  title: ClientInfoArray
+  items:
+    $ref: '#/components/schemas/ClientInfo'
+
+components:
+  $ref: '../openapi.yaml#/components'

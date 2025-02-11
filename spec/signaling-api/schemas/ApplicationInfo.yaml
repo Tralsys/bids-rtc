@@ -1,0 +1,48 @@
+ApplicationInfo:
+  type: object
+  title: ApplicationInfo
+  required:
+    - app_id
+    - name
+    - description
+    - owner
+    - default_role
+    - created_at
+  properties:
+    app_id:
+      type: string
+      format: uuid
+      readOnly: true
+      description: |
+        アプリID
+    name:
+      type: string
+      description: |
+        名前
+    description:
+      type: string
+      description: |
+        説明
+    owner:
+      type: string
+      description: |
+        オーナー
+    default_role:
+      type: string
+      description: |
+        デフォルトロール
+    created_at:
+      type: string
+      format: date-time
+      readOnly: true
+      description: |
+        作成日時
+
+ApplicationInfoArray:
+  type: array
+  title: ApplicationInfoArray
+  items:
+    $ref: '#/components/schemas/ApplicationInfo'
+
+components:
+  $ref: '../openapi.yaml#/components'

@@ -1,0 +1,9 @@
+modelPackage: model
+apiPackage: api
+invokerPackage: dev_t0r\bids_rtc\signaling
+packageName: main
+artifactVersion: 1.0.0
+licenseName: MIT
+developerOrganization: Tralsys
+developerOrganizationUrl: https://github.com/Tralsys
+composerPackageName: tralsys/signaling-api

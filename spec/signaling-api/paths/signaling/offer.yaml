@@ -1,0 +1,30 @@
+path:
+  post:
+    summary: SDP Offer登録
+    operationId: registerOffer
+    description: |
+      SDP Offerを登録する
+
+      自身がAnswerできるOfferが登録されている場合、同時にそれも取得します。
+    tags:
+      - SDP Exchange
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PostSDPOfferInfoRequestBody'
+    responses:
+      '201':
+        description: Offer登録成功
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostSDPOfferInfoResponse'
+      '401':
+        $ref: '#/components/responses/Error'
+
+components:
+  $ref: '../../openapi.yaml#/components'
