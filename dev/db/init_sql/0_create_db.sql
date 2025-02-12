@@ -158,16 +158,17 @@ CREATE TABLE
 		`sdp_id`
 	),
 
-	FOREIGN KEY (
-		`offer_client_id`
-	) REFERENCES
-		`clients` (
-			`client_id`
-	),
-	FOREIGN KEY (
-		`answer_client_id`
-	) REFERENCES
-		`clients` (
-			`client_id`
-	)
+	-- TODO: 一旦クライアントIDはクライアント側で生成するようにする
+	-- FOREIGN KEY (
+	-- 	`offer_client_id`
+	-- ) REFERENCES
+	-- 	`clients` (
+	-- 		`client_id`
+	-- ),
+	-- FOREIGN KEY (
+	-- 	`answer_client_id`
+	-- ) REFERENCES
+	-- 	`clients` (
+	-- 		`client_id`
+	-- )
 );
