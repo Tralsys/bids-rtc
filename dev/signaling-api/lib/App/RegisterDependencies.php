@@ -74,15 +74,6 @@ final class RegisterDependencies
                     \DI\get('pdo.options')
                 ),
 
-            // DataMocker
-            // @see https://github.com/ybelenko/openapi-data-mocker-server-middleware
-            \OpenAPIServer\Mock\OpenApiDataMockerInterface::class => \DI\create(\OpenAPIServer\Mock\OpenApiDataMocker::class)
-                ->method('setModelsNamespace', 'dev_t0r\bids_rtc\signaling\model\\'),
-
-            \OpenAPIServer\Mock\OpenApiDataMockerRouteMiddlewareFactory::class => \DI\autowire()
-                ->constructorParameter('getMockStatusCodeCallback', \DI\get('mocker.getMockStatusCodeCallback'))
-                ->constructorParameter('afterCallback', \DI\get('mocker.afterCallback')),
-
             // Monolog Logger
             \Psr\Log\LoggerInterface::class => \DI\factory(function (string $mode, string $name, string $path, $level, array $options = []) {
                 $logger = new \Monolog\Logger($name);

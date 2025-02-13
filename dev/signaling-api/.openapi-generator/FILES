@@ -1,4 +1,3 @@
-.github/workflows/main.yml
 config/.htaccess
 config/dev/default.inc.php
 config/prod/default.inc.php
@@ -6,7 +5,6 @@ lib/App/RegisterDependencies.php
 lib/App/RegisterMiddlewares.php
 lib/App/RegisterRoutes.php
 lib/App/ResponseEmitter.php
-lib/Auth/AbstractAuthenticator.php
 lib/BaseModel.php
 lib/api/AbstractAPIInfoApi.php
 lib/api/AbstractApplicationManagementApi.php

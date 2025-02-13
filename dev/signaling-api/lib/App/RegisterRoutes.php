@@ -27,8 +27,6 @@ namespace dev_t0r\bids_rtc\signaling\App;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Slim\Exception\HttpNotImplementedException;
-use Dyorg\TokenAuthentication;
-use dev_t0r\bids_rtc\signaling\Auth\BearerAuthenticator;
 
 /**
  * RegisterRoutes Class Doc Comment
@@ -538,25 +536,6 @@ class RegisterRoutes
                 "{$operation['basePathWithoutHost']}{$operation['path']}",
                 $callback
             )->setName($operation['operationId']);
-
-            // Add authentication middleware based on the operation's authMethods
-            if ($operation['authMethods']) {
-                foreach ($operation['authMethods'] as $authMethod) {
-                    if ($authMethod['isBearer']) {
-                        $route->add(new TokenAuthentication([
-                            'path' => '/',
-                            'authenticator' => new BearerAuthenticator,
-                            'regex' => '/Bearer\s+(.*)$/i',
-                            'header' => 'Authorization',
-                            'parameter' => null,
-                            'cookie' => null,
-                            'argument' => null,
-                            'attribute' => 'authorization_token',
-                            'error' => ['dev_t0r\bids_rtc\signaling\Auth\BearerAuthenticator', 'handleUnauthorized'],
-                        ]));
-                    }
-                }
-            }
 
             foreach ($middlewares as $middleware) {
                 $route->add($middleware);
