@@ -171,7 +171,7 @@ CREATE TABLE
 
 	PRIMARY KEY (
 		`sdp_id`
-	),
+	)
 
 	-- TODO: 一旦クライアントIDはクライアント側で生成するようにする
 	-- FOREIGN KEY (
