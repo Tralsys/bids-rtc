@@ -1,0 +1,101 @@
+services:
+  proxy:
+    image: nginx:1.26.3-alpine-slim
+    hostname: proxy
+    ports:
+      - "80:80"
+    networks:
+      - proxy-front
+      - proxy-signaling
+    volumes:
+      - type: bind
+        read_only: true
+        source: ./dev/proxy/conf.d
+        target: /etc/nginx/conf.d
+      - type: bind
+        source: ./dev/proxy/logs
+        target: /var/log/nginx
+    depends_on:
+      - front
+      - signaling
+  front:
+    build:
+      context: ./dev/frontend
+      dockerfile: Dockerfile
+    hostname: front
+    networks:
+      - proxy-front
+  signaling:
+    build:
+      context: ./dev/signaling-api
+      dockerfile: Dockerfile
+    hostname: signaling
+    networks:
+      - signaling-db
+      - proxy-signaling
+    ports:
+      - "8080:80"
+    volumes:
+      - type: bind
+        read_only: true
+        source: ./dev/signaling-api/lib
+        target: /var/www/html/lib
+      - type: bind
+        source: ./dev/signaling-api/logs
+        target: /var/log/apache2
+    depends_on:
+      - mysql
+  firebase:
+    build:
+      context: ./dev/firebase
+      dockerfile: Dockerfile
+    hostname: firebase
+    ports:
+      - "9099:9099"
+      - "4000:4000"
+    volumes:
+      - type: bind
+        source: ./dev/firebase/data
+        target: /emulator/data
+  mysql:
+    image: mysql:8.0-oracle
+    hostname: mysql
+    networks:
+      - signaling-db
+      - phpmyadmin-db
+    volumes:
+      - type: bind
+        read_only: true
+        source: ./dev/db/init_sql
+        target: /docker-entrypoint-initdb.d
+      - type: bind
+        read_only: true
+        source: ./dev/db/conf.d
+        target: /etc/mysql/conf.d
+      - type: bind
+        source: ./dev/db/logs
+        target: /var/log/mysql
+      - type: volume
+        source: db
+        target: /var/lib/mysql
+    env_file:
+      - dev/db/.env
+  phpmyadmin:
+    image: phpmyadmin:latest
+    networks:
+      - phpmyadmin-db
+    env_file:
+      - dev/db/.env
+    environment:
+      - PMA_HOST=mysql
+    ports:
+      - "8081:80"
+    depends_on:
+      - mysql
+volumes:
+  db:
+networks:
+  proxy-front:
+  proxy-signaling:
+  signaling-db:
+  phpmyadmin-db:
