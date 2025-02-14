@@ -40,18 +40,18 @@ return [
         null, // serverOriginPort
         true, // isPreFlightCanBeCached
         86400, // preFlightCacheMaxAge
-        false, // isForceAddMethods
-        false, // isForceAddHeaders
+        true, // isForceAddMethods
+        true, // isForceAddHeaders
         true, // isUseCredentials
-        false, // areAllOriginsAllowed
+        true, // areAllOriginsAllowed
         [], // allowedOrigins
-        false, // areAllMethodsAllowed
-        [], // allowedLcMethods
-        '', // allowedMethodsList
-        false, // areAllHeadersAllowed
-        [], // allowedLcHeaders
-        '', // allowedHeadersList
-        '', // exposedHeadersList
+        true, // areAllMethodsAllowed
+        ['put','options','post','delete','head','get'], // allowedLcMethods
+        'PUT,OPTIONS,POST,DELETE,HEAD,GET', // allowedMethodsList
+        true, // areAllHeadersAllowed
+        ['content-type', 'authorization'], // allowedLcHeaders
+        'Content-Type,Authorization', // allowedHeadersList
+        'X-Total-Count', // exposedHeadersList
         true, // isCheckHost
     ],
 
@@ -61,11 +61,23 @@ return [
     'pdo.password' => 'root',
     'pdo.options' => [
         \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+        \PDO::ATTR_AUTOCOMMIT => false,
+        \PDO::MYSQL_ATTR_INIT_COMMAND => 'SET time_zone = \'+00:00\';',
     ],
 
     // logger
     'logger.name' => 'App',
-    'logger.path' => \realpath(__DIR__ . '/../../logs') . '/app.log',
+    'logger.path' => \realpath(__DIR__ . '/../../logs') . '/app',
     'logger.level' => 300, // equals WARNING level
     'logger.options' => [],
+
+    // App Settings
+    'app.name' => 'bids-rtc',
+    'app.version' => '1.0.0',
+
+    'firebase.sa_file' => \realpath(__DIR__ . '/firebase-service-account.json'),
+    'firebase.project_id' => 'bids-rtc',
+
+    'firebase.api_token_cache_dir' => \realpath(__DIR__ . '/../../cache') . '/firebase/ApiToken',
+    'firebase.auth.pubkey_cache_dir' => \realpath(__DIR__ . '/../../cache') . '/firebase/AuthPubKey',
 ];
