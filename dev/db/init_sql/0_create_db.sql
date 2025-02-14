@@ -159,13 +159,13 @@ CREATE TABLE
 	,
 
 	`created_at`
-		DATETIME
+		DATETIME(6)
 		NOT NULL
 		DEFAULT CURRENT_TIMESTAMP
 	,
 
 	`deleted_at`
-		DATETIME
+		DATETIME(6)
 		DEFAULT NULL
 	,
 
