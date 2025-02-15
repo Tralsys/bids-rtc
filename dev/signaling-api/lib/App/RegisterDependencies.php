@@ -71,7 +71,7 @@ final class RegisterDependencies
                     \DI\get('pdo.dsn'),
                     \DI\get('pdo.username'),
                     \DI\get('pdo.password'),
-                    \DI\get('pdo.options')
+                    \DI\get('pdo.options'),
                 ),
 
             // Monolog Logger
@@ -81,7 +81,23 @@ final class RegisterDependencies
                 $handlers = [];
                 // stream logger as default handler across all environments
                 // somebody might not need it during development
-                $handlers[] = new \Monolog\Handler\StreamHandler($path, $level);
+                $handlers[] = new \Monolog\Handler\RotatingFileHandler(
+                    filename: $path,
+                    level: $level,
+                    filenameFormat: '{filename}.{date}.log',
+                );
+
+                $logger->setTimezone(new \DateTimeZone('UTC'));
+
+                $formatter = new \Monolog\Formatter\LineFormatter(
+                    "[%datetime%] %channel%.%level_name%: %message% %extra%\n",
+                );
+                $handlers[0]->setFormatter($formatter);
+
+                $logger->pushProcessor(new \Monolog\Processor\PsrLogMessageProcessor);
+                $logger->pushProcessor(new \Monolog\Processor\WebProcessor);
+                $logger->pushProcessor(new \Monolog\Processor\MemoryUsageProcessor);
+                $logger->pushProcessor(new \Monolog\Processor\IntrospectionProcessor);
 
                 if ($mode === 'development') {
                     // add dev handlers if necessary
@@ -100,6 +116,24 @@ final class RegisterDependencies
                 ->parameter('path', \DI\get('logger.path'))
                 ->parameter('level', \DI\get('logger.level'))
                 ->parameter('options', \DI\get('logger.options')),
+
+            // Firebase
+            \Kreait\Firebase\Factory::class => \DI\factory(function (string $projectId, string $serviceAccountFile, \Psr\Log\LoggerInterface $logger, ?string $apiTokenCacheDir, ?string $authPubKeyCacheDir) {
+                $factory = (new \Kreait\Firebase\Factory())
+                    ->withAuthTokenCache(new \Symfony\Component\Cache\Adapter\FilesystemAdapter(directory: $apiTokenCacheDir))
+                    ->withVerifierCache(new \Symfony\Component\Cache\Adapter\FilesystemAdapter(directory: $authPubKeyCacheDir))
+                    ->withProjectId($projectId)
+                    ->withServiceAccount($serviceAccountFile)
+                    ->withHttpLogger($logger);
+                return $factory;
+            })
+                ->parameter('projectId', \DI\get('firebase.project_id'))
+                ->parameter('serviceAccountFile', \DI\get('firebase.sa_file'))
+                ->parameter('logger', \DI\get(\Psr\Log\LoggerInterface::class))
+                ->parameter('apiTokenCacheDir', \DI\get('firebase.api_token_cache_dir'))
+                ->parameter('authPubKeyCacheDir', \DI\get('firebase.auth.pubkey_cache_dir'))
+            ,
+            \Kreait\Firebase\Contract\Auth::class => \DI\factory([\Kreait\Firebase\Factory::class, 'createAuth']),
         ]);
     }
 }

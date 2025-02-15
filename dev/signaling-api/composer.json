@@ -15,13 +15,14 @@
 		}
 	],
 	"require": {
-		"php": "^7.4 || ^8.0",
+		"php": "^8.3",
 		"kreait/firebase-php": "^7.16",
-		"monolog/monolog": "^2.4",
-		"neomerx/cors-psr7": "^2.0",
+		"monolog/monolog": "^3.8",
+		"neomerx/cors-psr7": "^3.0",
 		"php-di/slim-bridge": "^3.2",
 		"ramsey/uuid": "^4.7",
 		"slim/psr7": "^1.1.0",
+		"symfony/cache": "^7.0",
 		"ybelenko/openapi-data-mocker": "^1.0"
 	},
 	"require-dev": {

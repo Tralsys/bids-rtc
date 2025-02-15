@@ -23,7 +23,7 @@ final class MyAuthMiddleware implements MiddlewareInterface
 	) {
 	}
 
-	public const ATTR_NAME_TOKEN_OBJ = 'tokenObj';
+	public const string ATTR_NAME_TOKEN_OBJ = 'tokenObj';
 
 	public function process(
 		ServerRequestInterface $request,
@@ -47,7 +47,7 @@ final class MyAuthMiddleware implements MiddlewareInterface
 				$response = $this->responseFactory->createResponse();
 				return $isTokenExpired
 					? Utils::withError($response, 401, 'The token is expired')
-					: Utils::withError($response, 400, 'JWT(JOSE) error - ' . $errorMsg);
+					: Utils::withError($response, 400, "JWT(JOSE) error - $errorMsg");
 			}
 		} else {
 			$this->logger->info("Token was not set");
