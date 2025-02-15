@@ -57,8 +57,8 @@ return [
 
     // PDO
     'pdo.dsn' => 'mysql:host=localhost;charset=utf8mb4',
-    'pdo.username' => 'root',
-    'pdo.password' => 'root',
+    'pdo.username' => 'test',
+    'pdo.password' => 'test',
     'pdo.options' => [
         \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
     ],
@@ -68,4 +68,9 @@ return [
     'logger.path' => \realpath(__DIR__ . '/../../logs') . '/app.log',
     'logger.level' => 100, // equals DEBUG level
     'logger.options' => [],
+
+    'firebase.project_id' => 'bids-rtc',
+    'firebase.sa_file' => \realpath(__DIR__ . '/firebase-service-account.json'),
+    'firebase.api_token_cache_dir' => \realpath(__DIR__ . '/../../cache') . '/firebase/ApiToken',
+    'firebase.auth.pubkey_cache_dir' => \realpath(__DIR__ . '/../../cache') . '/firebase/AuthPubKey',
 ];
