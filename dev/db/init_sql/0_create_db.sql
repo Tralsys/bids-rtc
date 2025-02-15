@@ -135,22 +135,26 @@ CREATE TABLE
 
 	`answer_client_id`
     BINARY(16)
+		DEFAULT NULL
     COMMENT 'UUID v7'
 	,
 
 	`answer_process_id`
 		BINARY(16)
+		DEFAULT NULL
 		COMMENT 'UUID v7'
 	,
 
 	-- Protected with user_id(Raw)
 	`offer`
 		BLOB(65535)
+		NOT NULL
 	,
 
 	-- Protected with user_id(Raw)
 	`answer`
 		BLOB(65535)
+		DEFAULT NULL
 	,
 
 	`error_message`
