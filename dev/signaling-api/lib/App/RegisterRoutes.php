@@ -504,12 +504,6 @@ class RegisterRoutes
         // create mock middleware factory
         /** @var \Psr\Container\ContainerInterface */
         $container = $app->getContainer();
-        /** @var \OpenAPIServer\Mock\OpenApiDataMockerRouteMiddlewareFactory|null */
-        $mockMiddlewareFactory = null;
-        if ($container->has(\OpenAPIServer\Mock\OpenApiDataMockerRouteMiddlewareFactory::class)) {
-            // I know, anti-pattern. Don't retrieve dependency directly from container
-            $mockMiddlewareFactory = $container->get(\OpenAPIServer\Mock\OpenApiDataMockerRouteMiddlewareFactory::class);
-        }
 
         foreach ($this->operations as $operation) {
             $callback = function (ServerRequestInterface $request) use ($operation) {
@@ -522,13 +516,6 @@ class RegisterRoutes
                 // Notice how we register the controller using the class name?
                 // PHP-DI will instantiate the class for us only when it's actually necessary
                 $callback = ["\\{$operation['apiPackage']}\\{$operation['userClassname']}", $operation['operationId']];
-            }
-
-            if ($mockMiddlewareFactory) {
-                $mockSchemaResponses = array_map(function ($item) {
-                    return json_decode($item['jsonSchema'], true);
-                }, $operation['responses']);
-                $middlewares[] = $mockMiddlewareFactory->create($mockSchemaResponses);
             }
 
             $route = $app->map(
