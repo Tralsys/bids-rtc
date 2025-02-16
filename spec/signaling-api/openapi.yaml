@@ -39,7 +39,6 @@ paths:
   /answer:
     $ref: "./paths/signaling/answer.yaml#/path"
 
-
 components:
   securitySchemes:
     bearerAuth:
@@ -78,6 +77,8 @@ components:
       $ref: "./parameters/id.yaml#/ApplicationIdPath"
     ClientIdPath:
       $ref: "./parameters/id.yaml#/ClientIdPath"
+    ClientIdHeader:
+      $ref: "./parameters/id.yaml#/ClientIdHeader"
     SdpIdPath:
       $ref: "./parameters/id.yaml#/SdpIdPath"
 

@@ -11,12 +11,13 @@ path:
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/SdpIdPath'
+      - $ref: "#/components/parameters/SdpIdPath"
+      - $ref: "#/components/parameters/ClientIdHeader"
     responses:
-      '204':
+      "204":
         description: 削除成功
-      '401':
-        $ref: '#/components/responses/Error'
+      "401":
+        $ref: "#/components/responses/Error"
 
 components:
-  $ref: '../../openapi.yaml#/components'
+  $ref: "../../openapi.yaml#/components"

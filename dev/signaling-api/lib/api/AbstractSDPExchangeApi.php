@@ -55,6 +55,8 @@ abstract class AbstractSDPExchangeApi
         ResponseInterface $response,
         string $sdpId
     ): ResponseInterface {
+        $headers = $request->getHeaders();
+        $xClientId = $request->hasHeader('X-Client-Id') ? $headers['X-Client-Id'] : null;
         $message = "How about implementing deleteSDPExchange as a DELETE method in dev_t0r\bids_rtc\signaling\api\SDPExchangeApi class?";
         throw new HttpNotImplementedException($request, $message);
     }
@@ -75,6 +77,8 @@ abstract class AbstractSDPExchangeApi
         ServerRequestInterface $request,
         ResponseInterface $response
     ): ResponseInterface {
+        $headers = $request->getHeaders();
+        $xClientId = $request->hasHeader('X-Client-Id') ? $headers['X-Client-Id'] : null;
         $body = $request->getParsedBody();
         $message = "How about implementing getAnswer as a GET method in dev_t0r\bids_rtc\signaling\api\SDPExchangeApi class?";
         throw new HttpNotImplementedException($request, $message);
@@ -96,6 +100,8 @@ abstract class AbstractSDPExchangeApi
         ServerRequestInterface $request,
         ResponseInterface $response
     ): ResponseInterface {
+        $headers = $request->getHeaders();
+        $xClientId = $request->hasHeader('X-Client-Id') ? $headers['X-Client-Id'] : null;
         $body = $request->getParsedBody();
         $message = "How about implementing registerAnswer as a POST method in dev_t0r\bids_rtc\signaling\api\SDPExchangeApi class?";
         throw new HttpNotImplementedException($request, $message);
@@ -117,6 +123,8 @@ abstract class AbstractSDPExchangeApi
         ServerRequestInterface $request,
         ResponseInterface $response
     ): ResponseInterface {
+        $headers = $request->getHeaders();
+        $xClientId = $request->hasHeader('X-Client-Id') ? $headers['X-Client-Id'] : null;
         $body = $request->getParsedBody();
         $message = "How about implementing registerOffer as a POST method in dev_t0r\bids_rtc\signaling\api\SDPExchangeApi class?";
         throw new HttpNotImplementedException($request, $message);

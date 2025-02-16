@@ -8,25 +8,27 @@ path:
       - SDP Exchange
     security:
       - bearerAuth: []
+    parameters:
+      - $ref: "#/components/parameters/ClientIdHeader"
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/PostSDPOfferInfoRequestBody'
+            $ref: "#/components/schemas/PostSDPOfferInfoRequestBody"
     responses:
-      '200':
+      "200":
         description: Answer登録成功
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SDPAnswerInfo'
-      '204':
+              $ref: "#/components/schemas/SDPAnswerInfo"
+      "204":
         description: Answer未登録
-      '401':
-        $ref: '#/components/responses/Error'
-      '404':
-        $ref: '#/components/responses/Error'
+      "401":
+        $ref: "#/components/responses/Error"
+      "404":
+        $ref: "#/components/responses/Error"
 
   post:
     summary: SDP Answer登録
@@ -39,17 +41,19 @@ path:
       - SDP Exchange
     security:
       - bearerAuth: []
+    parameters:
+      - $ref: "#/components/parameters/ClientIdHeader"
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/SDPAnswerInfoArray'
+            $ref: "#/components/schemas/SDPAnswerInfoArray"
     responses:
-      '201':
+      "201":
         description: Answer登録成功
-      '401':
-        $ref: '#/components/responses/Error'
+      "401":
+        $ref: "#/components/responses/Error"
 
 components:
-  $ref: '../../openapi.yaml#/components'
+  $ref: "../../openapi.yaml#/components"

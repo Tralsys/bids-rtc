@@ -10,21 +10,23 @@ path:
       - SDP Exchange
     security:
       - bearerAuth: []
+    parameters:
+      - $ref: "#/components/parameters/ClientIdHeader"
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/PostSDPOfferInfoRequestBody'
+            $ref: "#/components/schemas/PostSDPOfferInfoRequestBody"
     responses:
-      '201':
+      "201":
         description: Offer登録成功
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PostSDPOfferInfoResponse'
-      '401':
-        $ref: '#/components/responses/Error'
+              $ref: "#/components/schemas/PostSDPOfferInfoResponse"
+      "401":
+        $ref: "#/components/responses/Error"
 
 components:
-  $ref: '../../openapi.yaml#/components'
+  $ref: "../../openapi.yaml#/components"
