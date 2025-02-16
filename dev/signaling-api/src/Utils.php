@@ -2,6 +2,7 @@
 
 namespace dev_t0r\bids_rtc\signaling;
 
+use dev_t0r\bids_rtc\signaling\RetValueOrError;
 use dev_t0r\bids_rtc\signaling\model\JsonDateTime;
 use Ramsey\Uuid\Uuid;
 
