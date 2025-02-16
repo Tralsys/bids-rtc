@@ -10,15 +10,9 @@ path:
       - bearerAuth: []
     parameters:
       - $ref: "#/components/parameters/ClientIdHeader"
-    requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/PostSDPOfferInfoRequestBody"
     responses:
       "200":
-        description: Answer登録成功
+        description: Answer取得成功
         content:
           application/json:
             schema:

@@ -79,7 +79,6 @@ abstract class AbstractSDPExchangeApi
     ): ResponseInterface {
         $headers = $request->getHeaders();
         $xClientId = $request->hasHeader('X-Client-Id') ? $headers['X-Client-Id'] : null;
-        $body = $request->getParsedBody();
         $message = "How about implementing getAnswer as a GET method in dev_t0r\bids_rtc\signaling\api\SDPExchangeApi class?";
         throw new HttpNotImplementedException($request, $message);
     }

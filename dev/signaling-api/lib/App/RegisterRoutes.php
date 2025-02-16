@@ -305,7 +305,7 @@ class RegisterRoutes
             'responses' => [
                 '200' => [
                     'jsonSchema' => '{
-  "description" : "Answer登録成功",
+  "description" : "Answer取得成功",
   "content" : {
     "application/json" : {
       "schema" : {
