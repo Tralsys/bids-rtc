@@ -40,7 +40,7 @@ abstract class AbstractSDPExchangeApi
     /**
      * DELETE deleteSDPExchange
      * Summary: SDP Exchangeのレコードを削除する
-     * Notes: SDP Exchangeレコードを削除する  物理削除のため、復元はできません
+     * Notes: SDP Exchangeレコードを削除する
      * Output-Formats: [application/json]
      *
      * @param ServerRequestInterface $request  Request
@@ -69,13 +69,15 @@ abstract class AbstractSDPExchangeApi
      *
      * @param ServerRequestInterface $request  Request
      * @param ResponseInterface      $response Response
+     * @param string $sdpId SDP ID
      *
      * @return ResponseInterface
      * @throws HttpNotImplementedException to force implementation class to override this method
      */
     public function getAnswer(
         ServerRequestInterface $request,
-        ResponseInterface $response
+        ResponseInterface $response,
+        string $sdpId
     ): ResponseInterface {
         $headers = $request->getHeaders();
         $xClientId = $request->hasHeader('X-Client-Id') ? $headers['X-Client-Id'] : null;

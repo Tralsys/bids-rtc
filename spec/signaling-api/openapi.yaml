@@ -38,6 +38,8 @@ paths:
     $ref: "./paths/signaling/offer.yaml#/path"
   /answer:
     $ref: "./paths/signaling/answer.yaml#/path"
+  /answer/{sdp_id}:
+    $ref: "./paths/signaling/get_answer.yaml#/path"
 
 components:
   securitySchemes:

@@ -295,70 +295,6 @@ class RegisterRoutes
             ],
         ],
         [
-            'httpMethod' => 'GET',
-            'basePathWithoutHost' => '/signaling',
-            'path' => '/answer',
-            'apiPackage' => 'dev_t0r\bids_rtc\signaling\api',
-            'classname' => 'AbstractSDPExchangeApi',
-            'userClassname' => 'SDPExchangeApi',
-            'operationId' => 'getAnswer',
-            'responses' => [
-                '200' => [
-                    'jsonSchema' => '{
-  "description" : "Answer取得成功",
-  "content" : {
-    "application/json" : {
-      "schema" : {
-        "$ref" : "#/components/schemas/SDPAnswerInfo"
-      }
-    }
-  }
-}',
-                ],
-                '204' => [
-                    'jsonSchema' => '{
-  "description" : "Answer未登録"
-}',
-                ],
-                '401' => [
-                    'jsonSchema' => '{
-  "description" : "エラー",
-  "content" : {
-    "application/json" : {
-      "schema" : {
-        "$ref" : "#/components/schemas/getClientInfoList_401_response"
-      }
-    }
-  }
-}',
-                ],
-                '404' => [
-                    'jsonSchema' => '{
-  "description" : "エラー",
-  "content" : {
-    "application/json" : {
-      "schema" : {
-        "$ref" : "#/components/schemas/getClientInfoList_401_response"
-      }
-    }
-  }
-}',
-                ],
-            ],
-            'authMethods' => [
-                // http security schema named 'bearerAuth'
-                [
-                    'type' => 'http',
-                    'scheme' => 'bearer',
-                    'bearerFormat' => 'JWT',
-                    'isBasic' => false,
-                    'isBearer' => true,
-                    'isApiKey' => false,
-                    'isOAuth' => false,
-                ],
-            ],
-        ],
-        [
             'httpMethod' => 'POST',
             'basePathWithoutHost' => '/signaling',
             'path' => '/answer',
@@ -460,6 +396,70 @@ class RegisterRoutes
 }',
                 ],
                 '401' => [
+                    'jsonSchema' => '{
+  "description" : "エラー",
+  "content" : {
+    "application/json" : {
+      "schema" : {
+        "$ref" : "#/components/schemas/getClientInfoList_401_response"
+      }
+    }
+  }
+}',
+                ],
+            ],
+            'authMethods' => [
+                // http security schema named 'bearerAuth'
+                [
+                    'type' => 'http',
+                    'scheme' => 'bearer',
+                    'bearerFormat' => 'JWT',
+                    'isBasic' => false,
+                    'isBearer' => true,
+                    'isApiKey' => false,
+                    'isOAuth' => false,
+                ],
+            ],
+        ],
+        [
+            'httpMethod' => 'GET',
+            'basePathWithoutHost' => '/signaling',
+            'path' => '/answer/{sdp_id}',
+            'apiPackage' => 'dev_t0r\bids_rtc\signaling\api',
+            'classname' => 'AbstractSDPExchangeApi',
+            'userClassname' => 'SDPExchangeApi',
+            'operationId' => 'getAnswer',
+            'responses' => [
+                '200' => [
+                    'jsonSchema' => '{
+  "description" : "Answer取得成功",
+  "content" : {
+    "application/json" : {
+      "schema" : {
+        "$ref" : "#/components/schemas/SDPAnswerInfo"
+      }
+    }
+  }
+}',
+                ],
+                '204' => [
+                    'jsonSchema' => '{
+  "description" : "Answer未登録"
+}',
+                ],
+                '401' => [
+                    'jsonSchema' => '{
+  "description" : "エラー",
+  "content" : {
+    "application/json" : {
+      "schema" : {
+        "$ref" : "#/components/schemas/getClientInfoList_401_response"
+      }
+    }
+  }
+}',
+                ],
+                '404' => [
                     'jsonSchema' => '{
   "description" : "エラー",
   "content" : {

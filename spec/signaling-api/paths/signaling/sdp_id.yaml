@@ -4,8 +4,6 @@ path:
     operationId: deleteSDPExchange
     description: |
       SDP Exchangeレコードを削除する
-
-      物理削除のため、復元はできません
     tags:
       - SDP Exchange
     security:
