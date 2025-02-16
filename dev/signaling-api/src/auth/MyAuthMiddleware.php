@@ -29,28 +29,33 @@ final class MyAuthMiddleware implements MiddlewareInterface
 		ServerRequestInterface $request,
 		RequestHandlerInterface $handler,
 	): ResponseInterface {
-		$tokenStr = $request->getHeader('Authorization')[0];
-		if ($tokenStr != null && preg_match('/^Bearer\s+(.*)$/', $tokenStr, $matches)) {
-			$tokenStr = $matches[1];
-			try {
-				$verifiedIdToken = $this->auth->verifyIdToken($tokenStr);
-
-				$request = $request->withAttribute($this::ATTR_NAME_TOKEN_OBJ, $verifiedIdToken);
-
-				$uid = $verifiedIdToken->claims()->get('sub');
-				$this->logger->info("Token uid: {uid}", ['uid' => $uid]);
-			} catch (FailedToVerifyToken $th) {
-				$errorMsg = $th->getMessage();
-				$this->logger->info("Token error - {message}", ['message' => $errorMsg]);
-
-				$isTokenExpired = str_contains($errorMsg, 'The token is expired');
-				$response = $this->responseFactory->createResponse();
-				return $isTokenExpired
-					? Utils::withError($response, 401, 'The token is expired')
-					: Utils::withError($response, 400, "JWT(JOSE) error - $errorMsg");
-			}
-		} else {
+		$tokenHeader = $request->getHeader('Authorization');
+		if ($tokenHeader == null || count($tokenHeader) == 0) {
 			$this->logger->info("Token was not set");
+		} else {
+			$tokenStr = $request->getHeader('Authorization')[0];
+			if ($tokenStr != null && preg_match('/^Bearer\s+(.*)$/', $tokenStr, $matches)) {
+				$tokenStr = $matches[1];
+				try {
+					$verifiedIdToken = $this->auth->verifyIdToken($tokenStr);
+
+					$request = $request->withAttribute($this::ATTR_NAME_TOKEN_OBJ, $verifiedIdToken);
+
+					$uid = $verifiedIdToken->claims()->get('sub');
+					$this->logger->info("Token uid: {uid}", ['uid' => $uid]);
+				} catch (FailedToVerifyToken $th) {
+					$errorMsg = $th->getMessage();
+					$this->logger->info("Token error - {message}", ['message' => $errorMsg]);
+
+					$isTokenExpired = str_contains($errorMsg, 'The token is expired');
+					$response = $this->responseFactory->createResponse();
+					return $isTokenExpired
+						? Utils::withError($response, 401, 'The token is expired')
+						: Utils::withError($response, 400, "JWT(JOSE) error - $errorMsg");
+				}
+			} else {
+				return Utils::withError($this->responseFactory->createResponse(), 400, 'Invalid token format');
+			}
 		}
 
 		$response = $handler->handle($request);
