@@ -2,7 +2,7 @@
 
 namespace dev_t0r\bids_rtc\signaling\api;
 
-use dev_t0r\bids_rtc\signaling\api\AbstractApiInfoApi;
+use dev_t0r\bids_rtc\signaling\api\AbstractAPIInfoApi;
 use dev_t0r\bids_rtc\signaling\model\ApiInfo;
 use dev_t0r\bids_rtc\signaling\Utils;
 use DI\Container;
