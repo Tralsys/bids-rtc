@@ -75,7 +75,7 @@ return [
     'app.name' => 'bids-rtc',
     'app.version' => '1.0.0',
 
-    'firebase.sa_file' => \realpath(__DIR__ . '/firebase-service-account.json'),
+    'firebase.sa_file' => \realpath(__DIR__) . '/firebase-service-account.json',
     'firebase.project_id' => 'bids-rtc',
 
     'firebase.api_token_cache_dir' => \realpath(__DIR__ . '/../../cache') . '/firebase/ApiToken',

@@ -70,7 +70,7 @@ return [
     'logger.options' => [],
 
     'firebase.project_id' => 'bids-rtc',
-    'firebase.sa_file' => \realpath(__DIR__ . '/firebase-service-account.json'),
+    'firebase.sa_file' => \realpath(__DIR__) . '/firebase-service-account.json',
     'firebase.api_token_cache_dir' => \realpath(__DIR__ . '/../../cache') . '/firebase/ApiToken',
     'firebase.auth.pubkey_cache_dir' => \realpath(__DIR__ . '/../../cache') . '/firebase/AuthPubKey',
 ];
