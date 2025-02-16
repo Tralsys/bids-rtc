@@ -45,12 +45,9 @@ class PostSDPOfferInfoRequestBody extends BaseModel
     protected const MODEL_SCHEMA = <<<'SCHEMA'
 {
   "title" : "SDP OfferInfo POST Request Body",
-  "required" : [ "client_id", "offer", "role" ],
+  "required" : [ "offer", "role" ],
   "type" : "object",
   "properties" : {
-    "client_id" : {
-      "$ref" : "#/components/schemas/offer_client_id"
-    },
     "role" : {
       "$ref" : "#/components/schemas/offer_client_role"
     },

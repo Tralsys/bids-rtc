@@ -43,22 +43,19 @@ SDPOfferInfoArray:
   type: array
   title: OfferInfoArray
   items:
-    $ref: '#/components/schemas/SDPOfferInfo'
+    $ref: "#/components/schemas/SDPOfferInfo"
 
 PostSDPOfferInfoRequestBody:
   type: object
   title: SDP OfferInfo POST Request Body
   required:
-    - client_id
     - role
     - offer
   properties:
-    client_id:
-      $ref: '#/components/schemas/SDPOfferInfo/properties/offer_client_id'
     role:
-      $ref: '#/components/schemas/SDPOfferInfo/properties/offer_client_role'
+      $ref: "#/components/schemas/SDPOfferInfo/properties/offer_client_role"
     offer:
-      $ref: '#/components/schemas/SDPOfferInfo/properties/offer'
+      $ref: "#/components/schemas/SDPOfferInfo/properties/offer"
     established_clients:
       type: array
       description: |
@@ -74,9 +71,9 @@ PostSDPOfferInfoResponse:
     - sdp_id
   properties:
     registered_offer:
-      $ref: '#/components/schemas/SDPOfferInfo'
+      $ref: "#/components/schemas/SDPOfferInfo"
     received_offers:
-      $ref: '#/components/schemas/SDPOfferInfoArray'
+      $ref: "#/components/schemas/SDPOfferInfoArray"
 
 components:
-  $ref: '../openapi.yaml#/components'
+  $ref: "../openapi.yaml#/components"
