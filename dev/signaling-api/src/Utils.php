@@ -64,6 +64,30 @@ final class Utils
 	): \Psr\Http\Message\ResponseInterface {
 		return self::withError($oldResponse, 400, 'Bad Request (Invalid UUID format)');
 	}
+	public static function withHeaderClientIdError(
+		\Psr\Http\Message\ResponseInterface $oldResponse,
+	): \Psr\Http\Message\ResponseInterface {
+		return self::withError($oldResponse, 400, 'Bad Request (X-Client-Id header is not set or invalid)');
+	}
+	public static function withUnauthorizedError(
+		\Psr\Http\Message\ResponseInterface $oldResponse,
+	): \Psr\Http\Message\ResponseInterface {
+		return self::withError($oldResponse, 401, 'Unauthorized');
+	}
+
+	public static function getClientIdOrNull(\Psr\Http\Message\ServerRequestInterface $request): ?Uuid
+	{
+		$headers = $request->getHeaders();
+		if (!$request->hasHeader('X-Client-Id')) {
+			return null;
+		}
+
+		$xClientId = $headers['X-Client-Id'];
+		if (!Uuid::isValid($xClientId)) {
+			return null;
+		}
+		return Uuid::fromString($xClientId);
+	}
 
 	public static function utcDateStrOrNull(?\DateTimeInterface $date): ?string
 	{
@@ -192,6 +216,11 @@ final class Utils
 			return null;
 		}
 		return Uuid::fromBytes($value);
+	}
+	public static function getHashedUserId(string $userId): string
+	{
+		// 元のUserIdを簡単に特定できないようにするためなので、パスワード的な安全性は考慮しない
+		return hash("sha256", $userId);
 	}
 
 	public static function errWorkGroupNotFound(): RetValueOrError

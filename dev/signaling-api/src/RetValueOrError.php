@@ -7,7 +7,7 @@ use Psr\Http\Message\ResponseInterface;
 /**
  * @template T
  */
-final class RetValueOrError
+final class RetValueOrError extends \RuntimeException
 {
 	public readonly bool $isError;
 	/** @var T */
