@@ -23,11 +23,15 @@ RUN composer install
 COPY \
 	./config \
 	/var/www/html/config
+RUN mv /var/www/html/config/prod/config.docker.inc.php /var/www/html/config/prod/config.inc.php
 COPY \
 	./lib \
 	/var/www/html/lib
 COPY \
 	./public \
 	/var/www/html/public
+COPY \
+	./src \
+	/var/www/html/src
 
 EXPOSE 80

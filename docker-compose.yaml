@@ -38,8 +38,8 @@ services:
     volumes:
       - type: bind
         read_only: true
-        source: ./dev/signaling-api/lib
-        target: /var/www/html/lib
+        source: ./dev/signaling-api/src
+        target: /var/www/html/src
       - type: bind
         source: ./dev/signaling-api/logs
         target: /var/log/apache2
