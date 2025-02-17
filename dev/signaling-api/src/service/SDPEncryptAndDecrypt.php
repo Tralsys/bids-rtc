@@ -14,7 +14,7 @@ class SDPEncryptAndDecrypt
 	private const int ENCRYPT_KEY_LENGTH = 32;
 	// `openssl_cipher_iv_length($ENCRYPT_METHOD)` の結果
 	private const int ENCRYPT_IV_LENGTH = 16;
-	private const string ENCRYPT_OPTS = OPENSSL_RAW_DATA;
+	private const int ENCRYPT_OPTS = OPENSSL_RAW_DATA;
 
 	private ?string $encryptKey = null;
 	private function getEncryptKey(): string

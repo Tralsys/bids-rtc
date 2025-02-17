@@ -88,6 +88,7 @@ class SDPExchangeService
 					if (self::MAX_EXEC_TIME_SEC <= (time() - $startTime)) {
 						break;
 					}
+					$this->logger->debug("getAnswer: sleep");
 					usleep(self::SLEEP_US);
 					continue;
 				}
@@ -163,6 +164,10 @@ class SDPExchangeService
 			throw RetValueOrError::withError(500, "Database error: beginTransaction failed");
 		}
 		try {
+			$this->repo->deleteRecordByClientId(
+				$this->hashedUserId,
+				$this->clientId,
+			);
 			$sdpId = $this->repo->insertOffer(
 				$this->hashedUserId,
 				$this->clientId,
@@ -192,20 +197,16 @@ class SDPExchangeService
 				$establishedClients,
 				5,
 			);
-			if ($count == 0) {
-				return new RegisterOfferAndGetAnswerableOffersResult(
-					$registeredOffer->decrypt($this->rawUserId, $this->encryptAndDecrypt),
-					[],
+			$answerableOffers = [];
+			if (0 < $count) {
+				$answerableOffers = $this->repo->getOfferListWithAnswerId(
+					$this->hashedUserId,
+					$this->clientId,
 				);
-			}
-
-			$answerableOffers = $this->repo->getOfferListWithAnswerId(
-				$this->hashedUserId,
-				$this->clientId,
-			);
-			if ($answerableOffers == null || count($answerableOffers) !== $count) {
-				$this->db->rollBack();
-				throw RetValueOrError::withError(500, "Database error: getOfferListWithAnswerId failed");
+				if ($answerableOffers == null || count($answerableOffers) !== $count) {
+					$this->db->rollBack();
+					throw RetValueOrError::withError(500, "Database error: getOfferListWithAnswerId failed");
+				}
 			}
 
 			$resObj = new RegisterOfferAndGetAnswerableOffersResult(
@@ -216,13 +217,18 @@ class SDPExchangeService
 				),
 			);
 
-			$this->db->commit();
+			if (!$this->db->commit()) {
+				$this->logger->error("Database error: commit failed");
+				throw RetValueOrError::withError(500, "Database error: commit failed");
+			}
+			$this->logger->debug("registerOfferAndGetAnswerableOffers: success");
 
 			return $resObj;
 		} catch (\PDOException $e) {
 			throw RetValueOrError::withError(500, "Database error: " . $e->getMessage());
 		} finally {
 			if ($this->db->inTransaction()) {
+				$this->logger->error("Database error: rollback");
 				$this->db->rollBack();
 			}
 		}

@@ -5,6 +5,7 @@ namespace dev_t0r\bids_rtc\signaling;
 use dev_t0r\bids_rtc\signaling\RetValueOrError;
 use dev_t0r\bids_rtc\signaling\model\JsonDateTime;
 use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
 
 Utils::__init__();
 
@@ -75,14 +76,18 @@ final class Utils
 		return self::withError($oldResponse, 401, 'Unauthorized');
 	}
 
-	public static function getClientIdOrNull(\Psr\Http\Message\ServerRequestInterface $request): ?Uuid
+	public static function getClientIdOrNull(\Psr\Http\Message\ServerRequestInterface $request): ?UuidInterface
 	{
 		$headers = $request->getHeaders();
 		if (!$request->hasHeader('X-Client-Id')) {
 			return null;
 		}
 
-		$xClientId = $headers['X-Client-Id'];
+		$xClientIdArray = $headers['X-Client-Id'];
+		if (count($xClientIdArray) !== 1) {
+			return null;
+		}
+		$xClientId = $xClientIdArray[0];
 		if (!Uuid::isValid($xClientId)) {
 			return null;
 		}
@@ -210,7 +215,7 @@ final class Utils
 	{
 		return is_null($value) ? null : floatval($value);
 	}
-	public static function uuidFromBytesOrNull(?string $value): ?Uuid
+	public static function uuidFromBytesOrNull(?string $value): ?UuidInterface
 	{
 		if ($value == null) {
 			return null;

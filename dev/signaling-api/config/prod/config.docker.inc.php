@@ -1,5 +1,7 @@
 <?php
 
+putenv('FIREBASE_AUTH_EMULATOR_HOST=localhost:9099');
+
 return [
 	// PDO
 	'pdo.dsn' => 'mysql:host=mysql;dbname=test;charset=utf8mb4',
