@@ -13,7 +13,6 @@ class DecryptedSdpRecord
 		public readonly UuidInterface $offer_client_id,
 		public readonly string $role,
 		public readonly ?UuidInterface $answer_client_id,
-		public readonly ?string $answer_process_id,
 		public readonly string $raw_offer,
 		public readonly ?string $raw_answer,
 		public readonly ?string $error_message,

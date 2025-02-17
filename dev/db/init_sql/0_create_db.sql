@@ -139,12 +139,6 @@ CREATE TABLE
     COMMENT 'UUID v7'
 	,
 
-	`answer_process_id`
-		BINARY(16)
-		DEFAULT NULL
-		COMMENT 'UUID v7'
-	,
-
 	-- Protected with user_id(Raw)
 	`offer`
 		BLOB(65535)

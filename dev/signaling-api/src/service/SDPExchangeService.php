@@ -3,7 +3,7 @@
 namespace dev_t0r\bids_rtc\signaling\service;
 
 use dev_t0r\bids_rtc\signaling\auth\MyAuthMiddleware;
-use dev_t0r\bids_rtc\signaling\model\DecryptedSdpRecord;
+use dev_t0r\bids_rtc\signaling\model\DecryptedSdpAnswer;
 use dev_t0r\bids_rtc\signaling\repo\SdpTableRepo;
 use dev_t0r\bids_rtc\signaling\RetValueOrError;
 use dev_t0r\bids_rtc\signaling\Utils;
@@ -16,6 +16,11 @@ use dev_t0r\bids_rtc\signaling\model\RegisterOfferAndGetAnswerableOffersResult;
 
 class SDPExchangeService
 {
+	public const string ROLE_PROVIDER = 'provider';
+	public const string ROLE_SUBSCRIBER = 'subscriber';
+	private const int MAX_EXEC_TIME_SEC = 15;
+	private const int SLEEP_US = 500 * 1000;
+
 	private readonly SdpTableRepo $repo;
 	public function __construct(
 		private readonly PDO $db,
@@ -53,13 +58,46 @@ class SDPExchangeService
 	public function deleteSDPExchange(
 		UuidInterface $sdpId,
 	): bool {
-		throw RetValueOrError::withError(501, 'Not implemented');
+		try {
+			$result = $this->repo->deleteRecord(
+				$this->hashedUserId,
+				$sdpId,
+				$this->clientId,
+			);
+			return $result === 1;
+		} catch (\PDOException $e) {
+			throw RetValueOrError::withError(500, "Database error: " . $e->getMessage());
+		}
 	}
 
 	public function getAnswer(
 		UuidInterface $sdpId,
-	): ?DecryptedSdpRecord {
-		throw RetValueOrError::withError(501, 'Not implemented');
+	): ?DecryptedSdpAnswer {
+		try {
+			$startTime = time();
+			do {
+				$record = $this->repo->getAnswer(
+					$sdpId,
+					$this->hashedUserId,
+					$this->clientId,
+				);
+				if ($record == null) {
+					throw RetValueOrError::withError(404, "Not Found: $sdpId");
+				}
+				if ($record->protected_answer == null) {
+					if (self::MAX_EXEC_TIME_SEC <= (time() - $startTime)) {
+						break;
+					}
+					usleep(self::SLEEP_US);
+					continue;
+				}
+
+				return $record->decrypt($this->encryptAndDecrypt);
+			} while (true);
+		} catch (\PDOException $e) {
+			throw RetValueOrError::withError(500, "Database error: " . $e->getMessage());
+		}
+		throw RetValueOrError::withError(408, "Timeout: $sdpId");
 	}
 
 	/**
@@ -71,7 +109,40 @@ class SDPExchangeService
 	public function registerAnswer(
 		array $answerArray,
 	): void {
-		throw RetValueOrError::withError(501, 'Not implemented');
+		if (!$this->db->beginTransaction()) {
+			$this->logger->error("Database error: beginTransaction failed");
+			throw RetValueOrError::withError(500, "Database error: beginTransaction failed");
+		}
+		try {
+			foreach ($answerArray as $answer) {
+				$result = $this->repo->setAnswer(
+					$this->hashedUserId,
+					$answer->sdpId,
+					$this->clientId,
+					$answer->getProtectedAnswer($this->encryptAndDecrypt),
+				);
+				if ($result !== 1) {
+					$this->db->rollBack();
+					throw RetValueOrError::withError(404, "Not Found: $answer->sdpId");
+				}
+			}
+			$this->db->commit();
+		} catch (\PDOException $e) {
+			throw RetValueOrError::withError(500, "Database error: " . $e->getMessage());
+		} finally {
+			if ($this->db->inTransaction()) {
+				$this->db->rollBack();
+			}
+
+			try {
+				$this->repo->unsetOfferAsProcessing(
+					$this->hashedUserId,
+					$this->clientId,
+				);
+			} catch (\PDOException $e) {
+				throw RetValueOrError::withError(500, "Database error: " . $e->getMessage());
+			}
+		}
 	}
 
 	/**
@@ -87,6 +158,73 @@ class SDPExchangeService
 		string $rawOffer,
 		array $establishedClients,
 	): RegisterOfferAndGetAnswerableOffersResult {
-		throw RetValueOrError::withError(501, 'Not implemented');
+		if (!$this->db->beginTransaction()) {
+			$this->logger->error("Database error: beginTransaction failed");
+			throw RetValueOrError::withError(500, "Database error: beginTransaction failed");
+		}
+		try {
+			$sdpId = $this->repo->insertOffer(
+				$this->hashedUserId,
+				$this->clientId,
+				$role,
+				$this->encryptAndDecrypt->encrypt($rawOffer),
+			);
+			if ($sdpId == null) {
+				$this->db->rollBack();
+				throw RetValueOrError::withError(500, "Database error: insertOffer failed");
+			}
+
+			$registeredOffer = $this->repo->selectOne(
+				$sdpId,
+				$this->hashedUserId,
+				$this->clientId,
+			);
+			if ($registeredOffer == null) {
+				$this->db->rollBack();
+				throw RetValueOrError::withError(500, "Database error: selectOne failed");
+			}
+
+			$targetRole = $role === self::ROLE_PROVIDER ? self::ROLE_SUBSCRIBER : self::ROLE_PROVIDER;
+			$count = $this->repo->setOfferAsProcessing(
+				$this->hashedUserId,
+				$targetRole,
+				$this->clientId,
+				$establishedClients,
+				5,
+			);
+			if ($count == 0) {
+				return new RegisterOfferAndGetAnswerableOffersResult(
+					$registeredOffer->decrypt($this->rawUserId, $this->encryptAndDecrypt),
+					[],
+				);
+			}
+
+			$answerableOffers = $this->repo->getOfferListWithAnswerId(
+				$this->hashedUserId,
+				$this->clientId,
+			);
+			if ($answerableOffers == null || count($answerableOffers) !== $count) {
+				$this->db->rollBack();
+				throw RetValueOrError::withError(500, "Database error: getOfferListWithAnswerId failed");
+			}
+
+			$resObj = new RegisterOfferAndGetAnswerableOffersResult(
+				$registeredOffer->decrypt($this->rawUserId, $this->encryptAndDecrypt),
+				array_map(
+					fn($v) => $v->decrypt($this->rawUserId, $this->encryptAndDecrypt),
+					$answerableOffers,
+				),
+			);
+
+			$this->db->commit();
+
+			return $resObj;
+		} catch (\PDOException $e) {
+			throw RetValueOrError::withError(500, "Database error: " . $e->getMessage());
+		} finally {
+			if ($this->db->inTransaction()) {
+				$this->db->rollBack();
+			}
+		}
 	}
 }

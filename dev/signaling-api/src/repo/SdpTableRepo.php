@@ -2,6 +2,7 @@
 
 namespace dev_t0r\bids_rtc\signaling\repo;
 
+use dev_t0r\bids_rtc\signaling\model\SdpAnswer;
 use dev_t0r\bids_rtc\signaling\model\SdpRecord;
 use dev_t0r\bids_rtc\signaling\Utils;
 use PDO;
@@ -36,7 +37,6 @@ class SdpTableRepo
 				SELECT
 					`role`,
 					`answer_client_id`,
-					`answer_process_id`,
 					`offer`,
 					`answer`,
 					`error_message`,
@@ -73,11 +73,75 @@ class SdpTableRepo
 				$offer_client_id,
 				$result['role'],
 				Utils::uuidFromBytesOrNull($result['answer_client_id']),
-				$result['answer_process_id'],
 				$result['offer'],
 				$result['answer'],
 				$result['error_message'],
 				Utils::dbDateStrToDateTime($result['created_at']),
+			);
+		} catch (\PDOException $ex) {
+			$errCode = $ex->getCode();
+
+			$this->logger->error(
+				"Failed to execute SQL ({errorCode} -> {errorInfo})",
+				[
+					"errorCode" => $errCode,
+					"errorInfo" => $ex->getMessage(),
+				],
+			);
+
+			throw $ex;
+		}
+	}
+
+	public function getAnswer(
+		UuidInterface $sdp_id,
+		string $hashed_user_id,
+		UuidInterface $offer_client_id,
+	): ?SdpAnswer {
+		$this->logger->debug(
+			'getAnswer (sdp_id: "{sdp_id}", hashed_user_id: "{hashed_user_id}, offer_client_id: "{offer_client_id}")',
+			[
+				'sdp_id' => $sdp_id,
+				'hashed_user_id' => $hashed_user_id,
+				'offer_client_id' => $offer_client_id,
+			],
+		);
+
+		try {
+			$query = $this->db->prepare(<<<SQL
+				SELECT
+					`answer_client_id`,
+					`answer`,
+				FROM
+					`sdp`
+				WHERE
+					`sdp_id` = :sdp_id
+					AND `user_id` = :hashed_user_id
+					AND `offer_client_id` = :offer_client_id
+					AND `deleted_at` IS NULL
+				SQL,
+			);
+
+			$query->bindValue(':sdp_id', $sdp_id->getBytes(), PDO::PARAM_STR);
+			$query->bindValue(':hashed_user_id', $hashed_user_id, PDO::PARAM_STR);
+			$query->bindValue(':offer_client_id', $offer_client_id->getBytes(), PDO::PARAM_STR);
+
+			$query->execute();
+			$result = $query->fetch(PDO::FETCH_ASSOC);
+			if ($result === false) {
+				$this->logger->warning(
+					'select sdp({sdp_id}) - rowCount is 0',
+					[
+						'sdp_id' => $sdp_id,
+					],
+				);
+				return null;
+			}
+
+			return new SdpAnswer(
+				$sdp_id,
+				$result['answer_client_id'],
+				$result['answer'],
 			);
 		} catch (\PDOException $ex) {
 			$errCode = $ex->getCode();
@@ -117,6 +181,7 @@ class SdpTableRepo
 				WHERE
 					`user_id` = :hashed_user_id
 					AND `offer_client_id` = :offer_client_id
+					AND `answer` IS NULL
 					AND `created_at` >= DATE_SUB(NOW(), INTERVAL :check_minutes MINUTE)
 				) AS `exists`
 				SQL,
@@ -217,21 +282,19 @@ class SdpTableRepo
 		}
 	}
 
-	public function setAnswerProcessId(
+	public function setOfferAsProcessing(
 		string $hashed_user_id,
 		string $target_role,
 		UuidInterface $answer_client_id,
-		UuidInterface $answer_process_id,
 		array $exclude_offer_client_ids,
 		int $check_minutes,
 	): int {
 		$this->logger->debug(
-			'setAnswerProcessId (hashed_user_id: "{hashed_user_id}, target_role: "{target_role}", answer_client_id:{answer_client_id}, answer_process_id: "{answer_process_id}", check_minutes: {check_minutes})',
+			'setAnswerProcessId (hashed_user_id: "{hashed_user_id}, target_role: "{target_role}", answer_client_id:{answer_client_id}, check_minutes: {check_minutes})',
 			[
 				'hashed_user_id' => $hashed_user_id,
 				'target_role' => $target_role,
 				'answer_client_id' => $answer_client_id,
-				'answer_process_id' => $answer_process_id,
 				'check_minutes' => $check_minutes,
 			],
 		);
@@ -242,11 +305,10 @@ class SdpTableRepo
 				`sdp`
 			SET
 				`answer_client_id` = :answer_client_id,
-				`answer_process_id` = :answer_process_id
 			WHERE
 				`user_id` = :hashed_user_id
 				AND `role` = :target_role
-				AND `answer_process_id` IS NULL
+				AND `answer_client_id` IS NULL
 				AND `deleted_at` IS NULL
 				AND `created_at` >= DATE_SUB(NOW(), INTERVAL :check_minutes MINUTE)
 			SQL;
@@ -263,7 +325,6 @@ class SdpTableRepo
 			$query = $this->db->prepare($queryStr);
 
 			$query->bindValue(':answer_client_id', $answer_client_id->getBytes(), PDO::PARAM_STR);
-			$query->bindValue(':answer_process_id', $answer_process_id->getBytes(), PDO::PARAM_STR);
 			$query->bindValue(':hashed_user_id', $hashed_user_id, PDO::PARAM_STR);
 			$query->bindValue(':target_role', $target_role, PDO::PARAM_STR);
 			for ($i = 0; $i < $excludeOfferClientIdListLength; $i++) {
@@ -294,17 +355,68 @@ class SdpTableRepo
 		}
 	}
 
-	public function getOfferListWithAnswerId(
+	public function unsetOfferAsProcessing(
 		string $hashed_user_id,
 		UuidInterface $answer_client_id,
-		UuidInterface $answer_process_id,
-	): array {
+	): int {
 		$this->logger->debug(
-			'getOfferWithAnswerId (hashed_user_id: "{hashed_user_id}, answer_client_id: "{answer_client_id}", answer_process_id: "{answer_process_id}")',
+			'unsetAnswerProcessId (hashed_user_id: "{hashed_user_id}", answer_client_id:"{answer_client_id}")',
 			[
 				'hashed_user_id' => $hashed_user_id,
 				'answer_client_id' => $answer_client_id,
-				'answer_process_id' => $answer_process_id,
+			],
+		);
+
+		try {
+			$query = $this->db->prepare(<<<SQL
+				UPDATE
+					`sdp`
+				SET
+					`answer_client_id` = NULL,
+				WHERE
+					`user_id` = :hashed_user_id
+					AND `answer_client_id` = :answer_client_id
+					AND `deleted_at` IS NULL
+					AND `answer` IS NULL
+				SQL,
+			);
+
+			$query->bindValue(':hashed_user_id', $hashed_user_id, PDO::PARAM_STR);
+			$query->bindValue(':answer_client_id', $answer_client_id->getBytes(), PDO::PARAM_STR);
+
+			$query->execute();
+			$rowCount = $query->rowCount();
+			$this->logger->debug(
+				'setAnswerProcessId - rowCount: {rowCount}',
+				[
+					'rowCount' => $rowCount,
+				],
+			);
+			return $rowCount;
+		} catch (\PDOException $ex) {
+			$errCode = $ex->getCode();
+
+			$this->logger->error(
+				"Failed to execute SQL ({errorCode} -> {errorInfo})",
+				[
+					"errorCode" => $errCode,
+					"errorInfo" => $ex->getMessage(),
+				],
+			);
+
+			throw $ex;
+		}
+	}
+
+	public function getOfferListWithAnswerId(
+		string $hashed_user_id,
+		UuidInterface $answer_client_id,
+	): array {
+		$this->logger->debug(
+			'getOfferWithAnswerId (hashed_user_id: "{hashed_user_id}, answer_client_id: "{answer_client_id}")',
+			[
+				'hashed_user_id' => $hashed_user_id,
+				'answer_client_id' => $answer_client_id,
 			],
 		);
 
@@ -320,14 +432,13 @@ class SdpTableRepo
 				WHERE
 					`user_id` = :hashed_user_id
 					AND `answer_client_id` = :answer_client_id
-					AND `answer_process_id` = :answer_process_id
+					AND `answer` IS NULL
 					AND `deleted_at` IS NULL
 				SQL,
 			);
 
 			$query->bindValue(':hashed_user_id', $hashed_user_id, PDO::PARAM_STR);
 			$query->bindValue(':answer_client_id', $answer_client_id->getBytes(), PDO::PARAM_STR);
-			$query->bindValue(':answer_process_id', $answer_process_id->getBytes(), PDO::PARAM_STR);
 
 			$query->execute();
 
@@ -339,7 +450,6 @@ class SdpTableRepo
 					Uuid::fromBytes($result['offer_client_id']),
 					$result['role'],
 					$answer_client_id,
-					$answer_process_id,
 					$result['offer'],
 					null,
 					null,
@@ -374,16 +484,14 @@ class SdpTableRepo
 		string $hashed_user_id,
 		UuidInterface $sdp_id,
 		UuidInterface $answer_client_id,
-		UuidInterface $answer_process_id,
 		string $protected_answer,
 	): int {
 		$this->logger->debug(
-			'setAnswer (hashed_user_id: "{hashed_user_id}, sdp_id: "{sdp_id}, answer_client_id: "{answer_client_id}, answer_process_id: "{answer_process_id}")',
+			'setAnswer (hashed_user_id: "{hashed_user_id}, sdp_id: "{sdp_id}, answer_client_id: "{answer_client_id}")',
 			[
 				'hashed_user_id' => $hashed_user_id,
 				'sdp_id' => $sdp_id,
 				'answer_client_id' => $answer_client_id,
-				'answer_process_id' => $answer_process_id,
 			],
 		);
 
@@ -397,7 +505,7 @@ class SdpTableRepo
 					`sdo_id` = :offer_client_id
 					AND `user_id` = :hashed_user_id
 					AND `answer_client_id` = :answer_client_id
-					AND `answer_process_id` = :answer_process_id
+					AND `answer` IS NULL
 					AND `deleted_at` IS NULL
 				SQL,
 			);
@@ -406,7 +514,6 @@ class SdpTableRepo
 			$query->bindValue(':sdp_id', $sdp_id->getBytes(), PDO::PARAM_STR);
 			$query->bindValue(':hashed_user_id', $hashed_user_id, PDO::PARAM_STR);
 			$query->bindValue(':answer_client_id', $answer_client_id->getBytes(), PDO::PARAM_STR);
-			$query->bindValue(':answer_process_id', $answer_process_id->getBytes(), PDO::PARAM_STR);
 
 			$query->execute();
 			$rowCount = $query->rowCount();

@@ -15,6 +15,9 @@ use Ramsey\Uuid\Uuid;
 
 class SDPExchangeApi extends AbstractSDPExchangeApi
 {
+	private const int MAX_SDP_BASE64_LENGTH = 12000;
+	private const int MAX_CLIENT_COUNT = 100;
+
 	private readonly SDPExchangeService $service;
 
 	public function __construct(
@@ -107,6 +110,10 @@ class SDPExchangeApi extends AbstractSDPExchangeApi
 		if (!is_array($body)) {
 			$body = [$body];
 		}
+		if (self::MAX_CLIENT_COUNT < count($body)) {
+			return Utils::withError($response, 400, 'Too many clients');
+		}
+
 		/** @var array<\dev_t0r\bids_rtc\signaling\model\SdpIdAndAnswer> $answerArray */
 		$answerArray = [];
 		try {
@@ -117,6 +124,9 @@ class SDPExchangeApi extends AbstractSDPExchangeApi
 				$base64Answer = $model->answer;
 				if (!Uuid::isValid($sdpIdStr)) {
 					return Utils::withUuidError($response);
+				}
+				if (self::MAX_SDP_BASE64_LENGTH < strlen($base64Answer)) {
+					return Utils::withError($response, 400, 'Too long base64 format');
 				}
 				$rawAnswer = base64_decode($base64Answer);
 				if ($rawAnswer === false) {
@@ -154,6 +164,16 @@ class SDPExchangeApi extends AbstractSDPExchangeApi
 			$reqBody = new PostSDPOfferInfoRequestBody();
 			$reqBody->setData($request->getParsedBody());
 			$role = $reqBody->role;
+			if ($role !== SDPExchangeService::ROLE_PROVIDER && $role !== SDPExchangeService::ROLE_SUBSCRIBER) {
+				return Utils::withError($response, 400, 'Invalid role');
+			}
+			if (self::MAX_SDP_BASE64_LENGTH < strlen($reqBody->offer)) {
+				return Utils::withError($response, 400, 'Too long base64 format');
+			}
+			if (self::MAX_CLIENT_COUNT < count($reqBody->established_clients)) {
+				return Utils::withError($response, 400, 'Too many clients');
+			}
+
 			$rawOffer = base64_decode($reqBody->offer);
 			if ($rawOffer === false) {
 				return Utils::withError($response, 400, 'Invalid base64 format');
