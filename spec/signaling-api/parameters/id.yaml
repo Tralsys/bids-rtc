@@ -1,6 +1,6 @@
 ApplicationIdPath:
   in: path
-  name: app_id
+  name: appId
   required: true
   description: |
     アプリケーションID
@@ -11,7 +11,7 @@ ApplicationIdPath:
 
 ClientIdPath:
   in: path
-  name: client_id
+  name: clientId
   required: true
   description: |
     クライアントID
@@ -33,7 +33,7 @@ ClientIdHeader:
 
 SdpIdPath:
   in: path
-  name: sdp_id
+  name: sdpId
   required: true
   description: |
     SDP ID

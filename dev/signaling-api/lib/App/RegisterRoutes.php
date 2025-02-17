@@ -67,7 +67,7 @@ class RegisterRoutes
         [
             'httpMethod' => 'GET',
             'basePathWithoutHost' => '/signaling',
-            'path' => '/apps/{app_id}',
+            'path' => '/apps/{appId}',
             'apiPackage' => 'dev_t0r\bids_rtc\signaling\api',
             'classname' => 'AbstractApplicationManagementApi',
             'userClassname' => 'ApplicationManagementApi',
@@ -186,7 +186,7 @@ class RegisterRoutes
         [
             'httpMethod' => 'DELETE',
             'basePathWithoutHost' => '/signaling',
-            'path' => '/clients/{client_id}',
+            'path' => '/clients/{clientId}',
             'apiPackage' => 'dev_t0r\bids_rtc\signaling\api',
             'classname' => 'AbstractClientManagementApi',
             'userClassname' => 'ClientManagementApi',
@@ -238,7 +238,7 @@ class RegisterRoutes
         [
             'httpMethod' => 'GET',
             'basePathWithoutHost' => '/signaling',
-            'path' => '/clients/{client_id}',
+            'path' => '/clients/{clientId}',
             'apiPackage' => 'dev_t0r\bids_rtc\signaling\api',
             'classname' => 'AbstractClientManagementApi',
             'userClassname' => 'ClientManagementApi',
@@ -384,7 +384,7 @@ class RegisterRoutes
         [
             'httpMethod' => 'DELETE',
             'basePathWithoutHost' => '/signaling',
-            'path' => '/exchange/{sdp_id}',
+            'path' => '/exchange/{sdpId}',
             'apiPackage' => 'dev_t0r\bids_rtc\signaling\api',
             'classname' => 'AbstractSDPExchangeApi',
             'userClassname' => 'SDPExchangeApi',
@@ -424,7 +424,7 @@ class RegisterRoutes
         [
             'httpMethod' => 'GET',
             'basePathWithoutHost' => '/signaling',
-            'path' => '/answer/{sdp_id}',
+            'path' => '/answer/{sdpId}',
             'apiPackage' => 'dev_t0r\bids_rtc\signaling\api',
             'classname' => 'AbstractSDPExchangeApi',
             'userClassname' => 'SDPExchangeApi',

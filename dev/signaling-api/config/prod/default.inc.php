@@ -48,11 +48,11 @@ return [
         true, // areAllOriginsAllowed
         [], // allowedOrigins
         true, // areAllMethodsAllowed
-        ['put','options','post','delete','head','get'], // allowedLcMethods
+        ['put', 'options', 'post', 'delete', 'head', 'get'], // allowedLcMethods
         'PUT,OPTIONS,POST,DELETE,HEAD,GET', // allowedMethodsList
         true, // areAllHeadersAllowed
-        ['content-type', 'authorization'], // allowedLcHeaders
-        'Content-Type,Authorization', // allowedHeadersList
+        ['content-type', 'authorization', 'x-client-id'], // allowedLcHeaders
+        'Content-Type,Authorization,X-Client-Id', // allowedHeadersList
         'X-Total-Count', // exposedHeadersList
         true, // isCheckHost
     ],

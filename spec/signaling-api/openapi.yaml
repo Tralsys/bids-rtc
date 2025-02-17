@@ -24,21 +24,21 @@ paths:
   /:
     $ref: "./paths/index.yaml#/path"
 
-  /apps/{app_id}:
+  /apps/{appId}:
     $ref: "./paths/apps/app_id.yaml#/path"
 
   /clients:
     $ref: "./paths/clients/index.yaml#/path"
-  /clients/{client_id}:
+  /clients/{clientId}:
     $ref: "./paths/clients/client_id.yaml#/path"
 
-  /exchange/{sdp_id}:
+  /exchange/{sdpId}:
     $ref: "./paths/signaling/sdp_id.yaml#/path"
   /offer:
     $ref: "./paths/signaling/offer.yaml#/path"
   /answer:
     $ref: "./paths/signaling/answer.yaml#/path"
-  /answer/{sdp_id}:
+  /answer/{sdpId}:
     $ref: "./paths/signaling/get_answer.yaml#/path"
 
 components:
