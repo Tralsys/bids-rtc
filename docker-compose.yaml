@@ -55,7 +55,7 @@ services:
       - "4000:4000"
     volumes:
       - type: bind
-        source: ./dev/firebase/data
+        source: ./dev/firebase/init
         target: /emulator/data
   mysql:
     image: mysql:8.0-oracle
