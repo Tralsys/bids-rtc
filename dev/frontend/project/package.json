@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@mui/material": "^6.4.4",
+    "@tralsys/bids-rtc-signaling-api": "^0.0.1",
     "firebase": "^11.3.1",
     "i18next": "^24.2.2",
     "i18next-browser-languagedetector": "^8.0.2",

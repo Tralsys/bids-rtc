@@ -1028,6 +1028,11 @@
   dependencies:
     "@swc/counter" "^0.1.3"
 
+"@tralsys/bids-rtc-signaling-api@^0.0.1":
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/@tralsys/bids-rtc-signaling-api/-/bids-rtc-signaling-api-0.0.1.tgz#add8468271ccc16b77ac3654a9b0fe81f86dd6e6"
+  integrity sha512-TegcvnYBlSptCL7iAj5whCvaA8ltnC2dPjZ7FITUe48kyUPHLRTOHJea1zUPr5teKK6zsbE6o/qo5aCmh+UGmA==
+
 "@types/estree@1.0.6", "@types/estree@^1.0.6":
   version "1.0.6"
   resolved "https://registry.yarnpkg.com/@types/estree/-/estree-1.0.6.tgz#628effeeae2064a1b4e79f78e81d87b7e5fc7b50"
