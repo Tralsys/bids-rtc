@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "ldev": "vite --mode local_debug",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "i18n": "i18next --config ./i18next-parser.config.ts",
