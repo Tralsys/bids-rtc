@@ -1,0 +1,3 @@
+[submodule "dev/signaling-api-ts"]
+	path = dev/signaling-api-ts
+	url = git@github.com:Tralsys/bids-webrtc-signaling-api-ts.git
