@@ -8,6 +8,9 @@ import { I18N_LANGUAGES, I18N_LANGUAGES_ARRAY } from "./i18n.ts";
 import { initReactI18next } from "react-i18next";
 
 import type { I18N_LANGUAGE_TYPE } from "./i18n.ts";
+import { ThemeProvider } from "@emotion/react";
+import theme from "./theme.ts";
+import { CssBaseline } from "@mui/material";
 
 const rootNode = document.getElementById("root");
 if (rootNode == null) {
@@ -56,6 +59,9 @@ i18n
 
 createRoot(rootNode).render(
 	<StrictMode>
-		<App />
+		<ThemeProvider theme={theme}>
+			<CssBaseline />
+			<App />
+		</ThemeProvider>
 	</StrictMode>
 );
