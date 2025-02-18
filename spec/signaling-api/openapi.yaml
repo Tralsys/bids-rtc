@@ -5,10 +5,10 @@ info:
   version: 1.0.0
 
 servers:
-  - url: http://localhost:8080/signaling
-    description: ローカル開発環境(Docker)
   - url: https://bids-rtc.t0r.dev/signaling
     description: 本番環境
+  - url: http://localhost:8080/signaling
+    description: ローカル開発環境(Docker)
 
 tags:
   - name: API Info

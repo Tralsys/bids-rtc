@@ -1,4 +1,3 @@
-npmName: "@Tralsys/bids-rtc-signaling-api"
-npmRepository: https://github.com/Tralsys/bids-rtc
+npmName: "@tralsys/bids-rtc-signaling-api"
 supportsES6: true
 allowUnicodeIdentifiers: true
