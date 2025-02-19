@@ -5,7 +5,7 @@ import {
 	getAuth,
 	GoogleAuthProvider,
 } from "firebase/auth";
-import { IS_LOCAL_DEBUG } from "../constants";
+import { IS_DOCKER_DEBUG, IS_LOCAL_DEBUG } from "../constants";
 
 const firebaseConfig: FirebaseOptions = {
 	apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -22,7 +22,7 @@ function initFirebaseServices() {
 	const analytics = getAnalytics(app);
 	const auth = getAuth(app);
 
-	if (IS_LOCAL_DEBUG) {
+	if (IS_LOCAL_DEBUG || IS_DOCKER_DEBUG) {
 		connectAuthEmulator(auth, "http://localhost:9099");
 	}
 

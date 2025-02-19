@@ -13,7 +13,7 @@ COPY \
   ./
 COPY ./project/src ./src
 
-RUN yarn build
+RUN yarn build --mode docker_debug
 
 FROM httpd:2.4.58-alpine
 
