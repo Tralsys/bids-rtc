@@ -170,7 +170,7 @@ class SDPExchangeApi extends AbstractSDPExchangeApi
 			if (self::MAX_SDP_BASE64_LENGTH < strlen($reqBody->offer)) {
 				return Utils::withError($response, 400, 'Too long base64 format');
 			}
-			if (self::MAX_CLIENT_COUNT < count($reqBody->established_clients)) {
+			if ($reqBody->established_clients != null && self::MAX_CLIENT_COUNT < count($reqBody->established_clients)) {
 				return Utils::withError($response, 400, 'Too many clients');
 			}
 
@@ -180,11 +180,13 @@ class SDPExchangeApi extends AbstractSDPExchangeApi
 			}
 
 			$establishedClients = [];
-			foreach ($reqBody->established_clients as $v) {
-				if (!Uuid::isValid($v)) {
-					return Utils::withUuidError($response);
+			if ($reqBody->established_clients != null) {
+				foreach ($reqBody->established_clients as $v) {
+					if (!Uuid::isValid($v)) {
+						return Utils::withUuidError($response);
+					}
+					$establishedClients[] = Uuid::fromString($v);
 				}
-				$establishedClients[] = Uuid::fromString($v);
 			}
 
 			$result = $this->service->registerOfferAndGetAnswerableOffers(

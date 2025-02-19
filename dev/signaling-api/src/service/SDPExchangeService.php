@@ -98,7 +98,7 @@ class SDPExchangeService
 		} catch (\PDOException $e) {
 			throw RetValueOrError::withError(500, "Database error: " . $e->getMessage());
 		}
-		throw RetValueOrError::withError(408, "Timeout: $sdpId");
+		throw RetValueOrError::withError(204, "Timeout: $sdpId");
 	}
 
 	/**
