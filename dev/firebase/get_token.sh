@@ -26,8 +26,6 @@ if [ -z "$RESPONSE_JSON" ]; then
 	exit 1
 fi
 
-echo $RESPONSE_JSON
-
 TOKEN=`echo $RESPONSE_JSON | sed -E 's/.+"idToken":"([^"]+)".+/\1/'`
 
 if [ -z "$TOKEN" ]; then
