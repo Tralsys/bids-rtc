@@ -19,7 +19,7 @@ class SDPExchangeService
 	public const string ROLE_PROVIDER = 'provider';
 	public const string ROLE_SUBSCRIBER = 'subscriber';
 	private const int MAX_EXEC_TIME_SEC = 15;
-	private const int SLEEP_US = 500 * 1000;
+	private const int SLEEP_US = 1000 * 1000;
 
 	private readonly SdpTableRepo $repo;
 	public function __construct(
