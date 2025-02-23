@@ -150,13 +150,13 @@ class SDPExchangeService
 	 * Offerを登録し、Answer可能なOfferを取得する
 	 *
 	 * @param string $role
-	 * @param string $rawOffer
+	 * @param ?string $rawOffer
 	 * @param array<\Ramsey\Uuid\UuidInterface> $establishedClients
 	 * @return \dev_t0r\bids_rtc\signaling\model\RegisterOfferAndGetAnswerableOffersResult
 	 */
 	public function registerOfferAndGetAnswerableOffers(
 		string $role,
-		string $rawOffer,
+		?string $rawOffer,
 		array $establishedClients,
 	): RegisterOfferAndGetAnswerableOffersResult {
 		if (!$this->db->beginTransaction()) {
@@ -164,29 +164,33 @@ class SDPExchangeService
 			throw RetValueOrError::withError(500, "Database error: beginTransaction failed");
 		}
 		try {
-			$this->repo->deleteRecordByClientId(
-				$this->hashedUserId,
-				$this->clientId,
-			);
-			$sdpId = $this->repo->insertOffer(
-				$this->hashedUserId,
-				$this->clientId,
-				$role,
-				$this->encryptAndDecrypt->encrypt($rawOffer),
-			);
-			if ($sdpId == null) {
-				$this->db->rollBack();
-				throw RetValueOrError::withError(500, "Database error: insertOffer failed");
-			}
+			if ($rawOffer == null || $rawOffer === "") {
+				$this->logger->info("registerOfferAndGetAnswerableOffers: offer is empty");
+			} else {
+				$this->repo->deleteRecordByClientId(
+					$this->hashedUserId,
+					$this->clientId,
+				);
+				$sdpId = $this->repo->insertOffer(
+					$this->hashedUserId,
+					$this->clientId,
+					$role,
+					$this->encryptAndDecrypt->encrypt($rawOffer),
+				);
+				if ($sdpId == null) {
+					$this->db->rollBack();
+					throw RetValueOrError::withError(500, "Database error: insertOffer failed");
+				}
 
-			$registeredOffer = $this->repo->selectOne(
-				$sdpId,
-				$this->hashedUserId,
-				$this->clientId,
-			);
-			if ($registeredOffer == null) {
-				$this->db->rollBack();
-				throw RetValueOrError::withError(500, "Database error: selectOne failed");
+				$registeredOffer = $this->repo->selectOne(
+					$sdpId,
+					$this->hashedUserId,
+					$this->clientId,
+				);
+				if ($registeredOffer == null) {
+					$this->db->rollBack();
+					throw RetValueOrError::withError(500, "Database error: selectOne failed");
+				}
 			}
 
 			$targetRole = $role === self::ROLE_PROVIDER ? self::ROLE_SUBSCRIBER : self::ROLE_PROVIDER;
