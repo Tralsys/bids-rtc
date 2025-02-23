@@ -20,6 +20,7 @@ class SDPExchangeService
 	public const string ROLE_SUBSCRIBER = 'subscriber';
 	private const int MAX_EXEC_TIME_SEC = 15;
 	private const int SLEEP_US = 1000 * 1000;
+	private const int OFFER_CHECK_WITHIN_MINUTE = 60;
 
 	private readonly SdpTableRepo $repo;
 	public function __construct(
@@ -199,7 +200,7 @@ class SDPExchangeService
 				$targetRole,
 				$this->clientId,
 				$establishedClients,
-				5,
+				self::OFFER_CHECK_WITHIN_MINUTE,
 			);
 			$answerableOffers = [];
 			if (0 < $count) {
