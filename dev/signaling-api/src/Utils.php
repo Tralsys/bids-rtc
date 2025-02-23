@@ -76,6 +76,13 @@ final class Utils
 		return self::withError($oldResponse, 401, 'Unauthorized');
 	}
 
+	public static function withRateLimitError(
+		\Psr\Http\Message\ResponseInterface $oldResponse,
+		float $retryAfterSec,
+	): \Psr\Http\Message\ResponseInterface {
+		return self::withError($oldResponse, 429, 'Rate limit exceeded')->withHeader('Retry-After', ceil($retryAfterSec));
+	}
+
 	public static function getClientIdOrNull(\Psr\Http\Message\ServerRequestInterface $request): ?UuidInterface
 	{
 		$headers = $request->getHeaders();
