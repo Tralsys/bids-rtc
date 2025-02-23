@@ -109,8 +109,11 @@ final class Utils
 			$date = $date->setTimezone(self::$UTC);
 		}
 
-		// ミリ秒部分は使用しない (そこまで精度は必要ないため)
-		return $date->format('Y-m-d H:i:s');
+		if ($date instanceof JsonDateTime) {
+			return $date->jsonSerialize();
+		}
+
+		return $date->format('Y-m-d\TH:i:s.u\Z');
 	}
 
 	public static function dbDateStrToDateTime(?string $dateStr): ?JsonDateTime
