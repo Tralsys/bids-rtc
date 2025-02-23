@@ -128,7 +128,7 @@ class SDPExchangeApi extends AbstractSDPExchangeApi
 				if (self::MAX_SDP_BASE64_LENGTH < strlen($base64Answer)) {
 					return Utils::withError($response, 400, 'Too long base64 format');
 				}
-				$rawAnswer = base64_decode($base64Answer);
+				$rawAnswer = base64_decode($base64Answer, true);
 				if ($rawAnswer === false) {
 					return Utils::withError($response, 400, 'Invalid base64 format');
 				}
@@ -174,7 +174,7 @@ class SDPExchangeApi extends AbstractSDPExchangeApi
 				return Utils::withError($response, 400, 'Too many clients');
 			}
 
-			$rawOffer = base64_decode($reqBody->offer);
+			$rawOffer = base64_decode($reqBody->offer, true);
 			if ($rawOffer === false) {
 				return Utils::withError($response, 400, 'Invalid base64 format');
 			}
