@@ -22,8 +22,13 @@ function initFirebaseServices() {
 	const analytics = getAnalytics(app);
 	const auth = getAuth(app);
 
-	if (IS_LOCAL_DEBUG || IS_DOCKER_DEBUG) {
+	if (IS_LOCAL_DEBUG) {
 		connectAuthEmulator(auth, "http://localhost:9099");
+	} else if (IS_DOCKER_DEBUG) {
+		connectAuthEmulator(
+			auth,
+			`${window.location.protocol}//${window.location.host}:9099`
+		);
 	}
 
 	const googleAuthProvider = new GoogleAuthProvider();
