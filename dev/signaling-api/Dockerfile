@@ -12,6 +12,7 @@ RUN a2enmod rewrite
 RUN docker-php-ext-install pdo_mysql
 
 WORKDIR /var/www/html
+RUN mkdir access cache && chmod 777 access cache /tmp
 
 COPY \
 	./composer.json \
