@@ -195,7 +195,11 @@ const DialogContent = memo<DialogContentProps>(function DialogContent({
 			>
 				利用規約
 			</Button>
-			<Button type="submit" disabled={!canSignInUpWithEmail || isProcessing}>
+			<Button
+				type="submit"
+				variant="contained"
+				disabled={!canSignInUpWithEmail || isProcessing}
+			>
 				Sign in
 			</Button>
 			<Button
