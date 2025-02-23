@@ -10,7 +10,7 @@ if [ -z "$EMAIL" ]; then
 	EMAIL='a@a.test'
 fi
 if [ -z "$PASSWORD" ]; then
-	PASSWORD='0000'
+	PASSWORD='0000Abcd'
 fi
 
 RESPONSE_JSON=`
@@ -25,6 +25,8 @@ if [ -z "$RESPONSE_JSON" ]; then
 	echo "Failed to get response" >&2
 	exit 1
 fi
+
+echo $RESPONSE_JSON
 
 TOKEN=`echo $RESPONSE_JSON | sed -E 's/.+"idToken":"([^"]+)".+/\1/'`
 
