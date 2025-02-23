@@ -297,21 +297,25 @@ class SdpTableRepo
 			],
 		);
 
+		// TODO: うまく動いていない感じがする・想定と違う動きをしてる。
 		$excludeOfferClientIdListLength = count($exclude_offer_client_ids);
 		$queryStr = <<<SQL
 			UPDATE
 				`sdp`
+			LEFT OUTER JOIN `sdp` AS `sdp2` ON `sdp`.`offer_client_id` = `sdp2`.`answer_client_id` AND `sdp`.`user_id` = `sdp2`.`user_id`
 			SET
-				`answer_client_id` = :answer_client_id
+				`sdp`.`answer_client_id` = :answer_client_id
 			WHERE
-				`user_id` = :hashed_user_id
-				AND `role` = :target_role
-				AND `answer_client_id` IS NULL
-				AND `deleted_at` IS NULL
-				AND `created_at` >= DATE_SUB(NOW(), INTERVAL :check_minutes MINUTE)
+				`sdp`.`user_id` = :hashed_user_id
+				AND `sdp`.`role` = :target_role
+				AND `sdp`.`answer_client_id` IS NULL
+				AND `sdp`.`deleted_at` IS NULL
+				AND `sdp`.`created_at` >= DATE_SUB(NOW(), INTERVAL :check_minutes MINUTE)
+				AND `sdp2`.`deleted_at` IS NULL
+				AND (`sdp2`.`updated_at` IS NULL OR `sdp2`.`updated_at` >= DATE_SUB(NOW(), INTERVAL 1 MINUTE))
 			SQL;
 		if (0 < count($exclude_offer_client_ids)) {
-			$queryStr .= ' AND `offer_client_id` NOT IN (';
+			$queryStr .= ' AND `sdp`.`offer_client_id` NOT IN (';
 			$queryStr .= implode(',', array_map(
 				fn($i) => ":exclude_offer_client_id_$i",
 				range(0, $excludeOfferClientIdListLength - 1),
