@@ -16,14 +16,22 @@ const PAIR_ROLE = {
 export type Role = (typeof ROLE)[keyof typeof ROLE];
 type SdpIdRef = { current: string };
 
+export type DataGotEventArgs = {
+	// clientId: string;
+	dataChannel: RTCDataChannel;
+	data: ArrayBuffer;
+};
+export type DataChannelStateChangedEventArgs = {
+	// clientId: string;
+	dataChannel: RTCDataChannel;
+};
+
 type CreateRTCPeerConnectionResult = {
 	peerConnection: RTCPeerConnection;
 	sdpIdRef: SdpIdRef;
 };
 
 type WindowObj = {
-	connMap?: Record<string, RTCPeerConnection>;
-	dcMap?: Record<string, Record<string, RTCDataChannel>>;
 	connManager?: RTCConnectionManager;
 };
 const _window = window as unknown as WindowObj;
@@ -52,10 +60,77 @@ export class RTCConnectionManager {
 	private _peerClientIdMap: Map<RTCPeerConnection, string> = new Map();
 	private _role: Role;
 
+	//#region DataGotEvent
+	private _dataGotListeners: ((e: DataGotEventArgs) => void)[] = [];
+	public addDataGotEventListener(listener: (e: DataGotEventArgs) => void) {
+		this._dataGotListeners.push(listener);
+	}
+	public removeDataGotEventListener(listener: (e: DataGotEventArgs) => void) {
+		const index = this._dataGotListeners.indexOf(listener);
+		if (0 <= index) {
+			this._dataGotListeners.splice(index, 1);
+		}
+	}
+
+	private dispatchDataGotEvent(e: DataGotEventArgs) {
+		for (const listener of this._dataGotListeners) {
+			listener(e);
+		}
+	}
+	//#endregion
+
+	//#region DataChannelOpenEvent
+	private _dataChannelOpenListeners: ((
+		e: DataChannelStateChangedEventArgs
+	) => void)[] = [];
+	public addDataChannelOpenEventListener(
+		listener: (e: DataChannelStateChangedEventArgs) => void
+	) {
+		this._dataChannelOpenListeners.push(listener);
+	}
+	public removeDataChannelOpenEventListener(
+		listener: (e: DataChannelStateChangedEventArgs) => void
+	) {
+		const index = this._dataChannelOpenListeners.indexOf(listener);
+		if (0 <= index) {
+			this._dataChannelOpenListeners.splice(index, 1);
+		}
+	}
+
+	private dispatchDataChannelOpenEvent(e: DataChannelStateChangedEventArgs) {
+		for (const listener of this._dataChannelOpenListeners) {
+			listener(e);
+		}
+	}
+	//#endregion
+
+	//#region DataChannelClosedEvent
+	private _dataChannelClosedListeners: ((
+		e: DataChannelStateChangedEventArgs
+	) => void)[] = [];
+	public addDataChannelClosedEventListener(
+		listener: (e: DataChannelStateChangedEventArgs) => void
+	) {
+		this._dataChannelClosedListeners.push(listener);
+	}
+	public removeDataChannelClosedEventListener(
+		listener: (e: DataChannelStateChangedEventArgs) => void
+	) {
+		const index = this._dataChannelClosedListeners.indexOf(listener);
+		if (0 <= index) {
+			this._dataChannelClosedListeners.splice(index, 1);
+		}
+	}
+
+	private dispatchDataChannelClosedEvent(e: DataChannelStateChangedEventArgs) {
+		for (const listener of this._dataChannelClosedListeners) {
+			listener(e);
+		}
+	}
+	//#endregion
+
 	constructor(role: Role) {
 		this._role = role;
-		_window.connMap = this._establishedConnectionMap;
-		_window.dcMap = this._dataChannelMap;
 		_window.connManager = this;
 		this._registerOffer();
 	}
@@ -63,12 +138,6 @@ export class RTCConnectionManager {
 	public async Dispose() {
 		console.log("Dispose RTCConnectionManager");
 		this._abortSignal.abort();
-		if (_window.connMap === this._establishedConnectionMap) {
-			delete _window.connMap;
-		}
-		if (_window.dcMap === this._dataChannelMap) {
-			delete _window.dcMap;
-		}
 		if (_window.connManager === this) {
 			delete _window.connManager;
 		}
@@ -110,6 +179,11 @@ export class RTCConnectionManager {
 			this._setupDataChannel(e.channel, sdpIdRef);
 			this._dataChannelMap[sdpIdRef.current] ??= {};
 			this._dataChannelMap[sdpIdRef.current][e.channel.label] = e.channel;
+			if (e.channel.readyState === "open") {
+				this.dispatchDataChannelOpenEvent({
+					dataChannel: e.channel,
+				});
+			}
 		};
 
 		return { peerConnection, sdpIdRef };
@@ -257,7 +331,6 @@ export class RTCConnectionManager {
 	private async _setupDataChannel(dc: RTCDataChannel, sdpIdRef: SdpIdRef) {
 		const role = this._role;
 		const pairRole = PAIR_ROLE[role];
-		const dcMap = this._dataChannelMap;
 		dc.onerror = (e) => this._onDataChannelError(sdpIdRef.current, e);
 		dc.onopen = (e: Event) => {
 			const event = e as RTCDataChannelEvent;
@@ -268,6 +341,9 @@ export class RTCConnectionManager {
 			const sdpId = sdpIdRef.current;
 			this._dataChannelMap[sdpId] ??= {};
 			this._dataChannelMap[sdpId][dc.label] = dc;
+			this.dispatchDataChannelOpenEvent({
+				dataChannel: dc,
+			});
 			console.log(`DataChannel opened for ${sdpId}[${role}]@${dc.label}`);
 			dc.send(`Hello, world! from ${sdpId}[${role}]@${dc.label}`);
 		};
@@ -275,15 +351,23 @@ export class RTCConnectionManager {
 			console.log(
 				`DataChannel message from ${sdpIdRef.current}[${pairRole}]@${dc.label}: ${e.data}`
 			);
-			// TODO: Handle message
+			if (e.data instanceof ArrayBuffer) {
+				this.dispatchDataGotEvent({
+					dataChannel: dc,
+					data: e.data,
+				});
+			}
 		};
 		dc.onclose = () => {
 			console.log(
 				`DataChannel closed for ${sdpIdRef.current}[${role}]@${dc.label}`
 			);
-			if (dcMap[sdpIdRef.current]) {
-				delete dcMap[sdpIdRef.current][dc.label];
+			if (this._dataChannelMap[sdpIdRef.current]) {
+				delete this._dataChannelMap[sdpIdRef.current][dc.label];
 			}
+			this.dispatchDataChannelClosedEvent({
+				dataChannel: dc,
+			});
 		};
 	}
 
@@ -305,5 +389,11 @@ export class RTCConnectionManager {
 		}
 
 		this._connectionStateMap[sdpIdRef.current] = peerConnection.connectionState;
+
+		if (peerConnection.connectionState === "closed") {
+			peerConnection.close();
+			delete this._establishedConnectionMap[sdpIdRef.current];
+			delete this._dataChannelMap[sdpIdRef.current];
+		}
 	}
 }
