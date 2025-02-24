@@ -40,7 +40,7 @@ abstract class AbstractClientManagementApi
     /**
      * DELETE deleteClientInfo
      * Summary: Clientの情報を削除する
-     * Notes: クライアントの情報を削除する  物理削除のため、復元はできません
+     * Notes: クライアントの情報を削除する
      * Output-Formats: [application/json]
      *
      * @param ServerRequestInterface $request  Request
@@ -56,6 +56,27 @@ abstract class AbstractClientManagementApi
         string $clientId
     ): ResponseInterface {
         $message = "How about implementing deleteClientInfo as a DELETE method in dev_t0r\bids_rtc\signaling\api\ClientManagementApi class?";
+        throw new HttpNotImplementedException($request, $message);
+    }
+
+    /**
+     * GET getClientAccessToken
+     * Summary: Clientのアクセストークンを取得する
+     * Notes: リフレッシュトークンを用いて、アクセストークンを取得する
+     * Output-Formats: [application/jose, application/json]
+     *
+     * @param ServerRequestInterface $request  Request
+     * @param ResponseInterface      $response Response
+     *
+     * @return ResponseInterface
+     * @throws HttpNotImplementedException to force implementation class to override this method
+     */
+    public function getClientAccessToken(
+        ServerRequestInterface $request,
+        ResponseInterface $response
+    ): ResponseInterface {
+        $body = $request->getParsedBody();
+        $message = "How about implementing getClientAccessToken as a GET method in dev_t0r\bids_rtc\signaling\api\ClientManagementApi class?";
         throw new HttpNotImplementedException($request, $message);
     }
 

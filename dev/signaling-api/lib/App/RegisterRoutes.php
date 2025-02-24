@@ -92,6 +92,67 @@ class RegisterRoutes
         [
             'httpMethod' => 'GET',
             'basePathWithoutHost' => '/signaling',
+            'path' => '/client_token',
+            'apiPackage' => 'dev_t0r\bids_rtc\signaling\api',
+            'classname' => 'AbstractClientManagementApi',
+            'userClassname' => 'ClientManagementApi',
+            'operationId' => 'getClientAccessToken',
+            'responses' => [
+                '200' => [
+                    'jsonSchema' => '{
+  "description" : "アクセストークン",
+  "content" : {
+    "application/jose" : {
+      "schema" : {
+        "type" : "string"
+      }
+    }
+  }
+}',
+                ],
+                '401' => [
+                    'jsonSchema' => '{
+  "description" : "エラー",
+  "content" : {
+    "application/json" : {
+      "schema" : {
+        "$ref" : "#/components/schemas/getClientInfoList_401_response"
+      }
+    }
+  }
+}',
+                ],
+                '403' => [
+                    'jsonSchema' => '{
+  "description" : "エラー",
+  "content" : {
+    "application/json" : {
+      "schema" : {
+        "$ref" : "#/components/schemas/getClientInfoList_401_response"
+      }
+    }
+  }
+}',
+                ],
+                '404' => [
+                    'jsonSchema' => '{
+  "description" : "エラー",
+  "content" : {
+    "application/json" : {
+      "schema" : {
+        "$ref" : "#/components/schemas/getClientInfoList_401_response"
+      }
+    }
+  }
+}',
+                ],
+            ],
+            'authMethods' => [
+            ],
+        ],
+        [
+            'httpMethod' => 'GET',
+            'basePathWithoutHost' => '/signaling',
             'path' => '/clients',
             'apiPackage' => 'dev_t0r\bids_rtc\signaling\api',
             'classname' => 'AbstractClientManagementApi',
@@ -151,7 +212,7 @@ class RegisterRoutes
   "content" : {
     "application/json" : {
       "schema" : {
-        "$ref" : "#/components/schemas/ClientInfo"
+        "$ref" : "#/components/schemas/ClientInfoWithToken"
       }
     }
   }

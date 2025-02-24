@@ -11,6 +11,7 @@ lib/api/AbstractSDPExchangeApi.php
 lib/model/ApiInfo.php
 lib/model/ApplicationInfo.php
 lib/model/ClientInfo.php
+lib/model/ClientInfoWithToken.php
 lib/model/GetClientInfoList401Response.php
 lib/model/OfferClientRole.php
 lib/model/PostSDPOfferInfoRequestBody.php

@@ -24,13 +24,13 @@ namespace dev_t0r\bids_rtc\signaling\model;
 use dev_t0r\bids_rtc\signaling\BaseModel;
 
 /**
- * ClientInfo
+ * ClientInfoWithToken
  *
  * @package dev_t0r\bids_rtc\signaling\model
  * @author  OpenAPI Generator team
  * @link    https://github.com/openapitools/openapi-generator
  */
-class ClientInfo extends BaseModel
+class ClientInfoWithToken extends BaseModel
 {
     /**
      * @var string Models namespace.
@@ -44,8 +44,8 @@ class ClientInfo extends BaseModel
      */
     protected const MODEL_SCHEMA = <<<'SCHEMA'
 {
-  "title" : "ClientInfo",
-  "required" : [ "app_id", "client_id", "created_at", "name" ],
+  "title" : "ClientInfoWithToken",
+  "required" : [ "app_id", "client_id", "created_at", "name", "refresh_token" ],
   "type" : "object",
   "properties" : {
     "app_id" : {
@@ -68,6 +68,11 @@ class ClientInfo extends BaseModel
       "type" : "string",
       "description" : "作成日時\n",
       "format" : "date-time",
+      "readOnly" : true
+    },
+    "refresh_token" : {
+      "type" : "string",
+      "description" : "リフレッシュトークン\n",
       "readOnly" : true
     }
   }

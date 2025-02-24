@@ -45,7 +45,7 @@ class ApplicationInfo extends BaseModel
     protected const MODEL_SCHEMA = <<<'SCHEMA'
 {
   "title" : "ApplicationInfo",
-  "required" : [ "app_id", "created_at", "default_role", "description", "name", "owner" ],
+  "required" : [ "app_id", "created_at", "description", "name", "owner" ],
   "type" : "object",
   "properties" : {
     "app_id" : {
@@ -65,10 +65,6 @@ class ApplicationInfo extends BaseModel
     "owner" : {
       "type" : "string",
       "description" : "オーナー\n"
-    },
-    "default_role" : {
-      "type" : "string",
-      "description" : "デフォルトロール\n"
     },
     "created_at" : {
       "type" : "string",
