@@ -208,7 +208,7 @@ class SDPExchangeService
 					$this->hashedUserId,
 					$this->clientId,
 				);
-				if ($answerableOffers == null || count($answerableOffers) !== $count) {
+				if ($answerableOffers == null) {
 					$this->db->rollBack();
 					throw RetValueOrError::withError(500, "Database error: getOfferListWithAnswerId failed");
 				}
