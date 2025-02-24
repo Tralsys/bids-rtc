@@ -297,22 +297,30 @@ class SdpTableRepo
 			],
 		);
 
-		// TODO: うまく動いていない感じがする・想定と違う動きをしてる。
 		$excludeOfferClientIdListLength = count($exclude_offer_client_ids);
 		$queryStr = <<<SQL
-			UPDATE
-				`sdp`
-			LEFT OUTER JOIN `sdp` AS `sdp2` ON `sdp`.`offer_client_id` = `sdp2`.`answer_client_id` AND `sdp`.`user_id` = `sdp2`.`user_id`
+			UPDATE `sdp` AS `sdp1`
+			LEFT JOIN (
+					SELECT
+						`offer_client_id`
+					FROM
+						`sdp`
+					WHERE
+						`user_id` = :hashed_user_id
+						AND `answer_client_id` IS NOT NULL
+						AND `updated_at` >= DATE_SUB(NOW(), INTERVAL 1 MINUTE)
+			) AS `recent_answers`
+			ON
+				`sdp1`.`offer_client_id` = `recent_answers`.`offer_client_id`
 			SET
-				`sdp`.`answer_client_id` = :answer_client_id
+				`sdp1`.`answer_client_id` = :answer_client_id
 			WHERE
-				`sdp`.`user_id` = :hashed_user_id
-				AND `sdp`.`role` = :target_role
-				AND `sdp`.`answer_client_id` IS NULL
-				AND `sdp`.`deleted_at` IS NULL
-				AND `sdp`.`created_at` >= DATE_SUB(NOW(), INTERVAL :check_minutes MINUTE)
-				AND `sdp2`.`deleted_at` IS NULL
-				AND (`sdp2`.`updated_at` IS NULL OR `sdp2`.`updated_at` >= DATE_SUB(NOW(), INTERVAL 1 MINUTE))
+				`sdp1`.`user_id` = :hashed_user_id
+				AND `recent_answers`.`offer_client_id` IS NULL
+				AND `sdp1`.`role` = :target_role
+				AND `sdp1`.`answer_client_id` IS NULL
+				AND `sdp1`.`deleted_at` IS NULL
+				AND `sdp1`.`created_at` >= DATE_SUB(NOW(), INTERVAL :check_minutes MINUTE)
 			SQL;
 		if (0 < count($exclude_offer_client_ids)) {
 			$queryStr .= ' AND `sdp`.`offer_client_id` NOT IN (';
