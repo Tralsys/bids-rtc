@@ -6,10 +6,8 @@
  */
 
 // Disable error reporting
-error_reporting(E_ALL);
-ini_set("log_errors", 1);
-ini_set("display_errors", 1);
-ini_set('error_log', '/var/log/apache2/php-error.log');
+error_reporting(0);
+ini_set("display_errors", 0);
 
 /**
  * Each environment(dev, prod) should contain two files default.inc.php and config.inc.php.
