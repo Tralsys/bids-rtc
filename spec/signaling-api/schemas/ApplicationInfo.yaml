@@ -6,7 +6,6 @@ ApplicationInfo:
     - name
     - description
     - owner
-    - default_role
     - created_at
   properties:
     app_id:
@@ -27,10 +26,6 @@ ApplicationInfo:
       type: string
       description: |
         オーナー
-    default_role:
-      type: string
-      description: |
-        デフォルトロール
     created_at:
       type: string
       format: date-time
@@ -42,7 +37,7 @@ ApplicationInfoArray:
   type: array
   title: ApplicationInfoArray
   items:
-    $ref: '#/components/schemas/ApplicationInfo'
+    $ref: "#/components/schemas/ApplicationInfo"
 
 components:
-  $ref: '../openapi.yaml#/components'
+  $ref: "../openapi.yaml#/components"

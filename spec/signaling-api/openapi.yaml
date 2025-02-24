@@ -31,6 +31,8 @@ paths:
     $ref: "./paths/clients/index.yaml#/path"
   /clients/{clientId}:
     $ref: "./paths/clients/client_id.yaml#/path"
+  /client_token:
+    $ref: "./paths/clients/client_token.yaml#/path"
 
   /exchange/{sdpId}:
     $ref: "./paths/signaling/sdp_id.yaml#/path"
@@ -58,6 +60,8 @@ components:
       $ref: "./schemas/ApplicationInfo.yaml#/ApplicationInfoArray"
     ClientInfo:
       $ref: "./schemas/ClientInfo.yaml#/ClientInfo"
+    ClientInfoWithToken:
+      $ref: "./schemas/ClientInfo.yaml#/ClientInfoWithToken"
     ClientInfoArray:
       $ref: "./schemas/ClientInfo.yaml#/ClientInfoArray"
 

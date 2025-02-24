@@ -1,0 +1,31 @@
+path:
+  get:
+    summary: Clientのアクセストークンを取得する
+    operationId: getClientAccessToken
+    description: |
+      リフレッシュトークンを用いて、アクセストークンを取得する
+    tags:
+      - Client Management
+    requestBody:
+      required: true
+      content:
+        application/jose:
+          schema:
+            type: string
+            description: リフレッシュトークン
+    responses:
+      "200":
+        description: アクセストークン
+        content:
+          application/jose:
+            schema:
+              type: string
+      "401":
+        $ref: "#/components/responses/Error"
+      "403":
+        $ref: "#/components/responses/Error"
+      "404":
+        $ref: "#/components/responses/Error"
+
+components:
+  $ref: "../../openapi.yaml#/components"

@@ -9,39 +9,37 @@ path:
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/ClientIdPath'
+      - $ref: "#/components/parameters/ClientIdPath"
     responses:
-      '200':
+      "200":
         description: クライアントの情報
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ClientInfo'
-      '401':
-        $ref: '#/components/responses/Error'
-      '404':
-        $ref: '#/components/responses/Error'
+              $ref: "#/components/schemas/ClientInfo"
+      "401":
+        $ref: "#/components/responses/Error"
+      "404":
+        $ref: "#/components/responses/Error"
 
   delete:
     summary: Clientの情報を削除する
     operationId: deleteClientInfo
     description: |
       クライアントの情報を削除する
-
-      物理削除のため、復元はできません
     tags:
       - Client Management
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/ClientIdPath'
+      - $ref: "#/components/parameters/ClientIdPath"
     responses:
-      '200':
+      "200":
         description: 削除成功
-      '401':
-        $ref: '#/components/responses/Error'
-      '404':
-        $ref: '#/components/responses/Error'
+      "401":
+        $ref: "#/components/responses/Error"
+      "404":
+        $ref: "#/components/responses/Error"
 
 components:
-  $ref: '../../openapi.yaml#/components'
+  $ref: "../../openapi.yaml#/components"
