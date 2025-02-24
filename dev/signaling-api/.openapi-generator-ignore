@@ -2,6 +2,10 @@
 .gitignore
 README.md
 composer.json
+lib/App/RegisterDependencies.php
+lib/App/RegisterMiddlewares.php
+lib/App/ResponseEmitter.php
 lib/Auth/AbstractAuthenticator.php
+lib/BaseModel.php
 config/dev/default.inc.php
 config/prod/default.inc.php

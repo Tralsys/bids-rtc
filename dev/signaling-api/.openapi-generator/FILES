@@ -1,9 +1,5 @@
 config/.htaccess
-lib/App/RegisterDependencies.php
-lib/App/RegisterMiddlewares.php
 lib/App/RegisterRoutes.php
-lib/App/ResponseEmitter.php
-lib/BaseModel.php
 lib/api/AbstractAPIInfoApi.php
 lib/api/AbstractApplicationManagementApi.php
 lib/api/AbstractClientManagementApi.php
