@@ -80,4 +80,7 @@ return [
 
 	'firebase.api_token_cache_dir' => \realpath(__DIR__ . '/../../cache') . '/firebase/ApiToken',
 	'firebase.auth.pubkey_cache_dir' => \realpath(__DIR__ . '/../../cache') . '/firebase/AuthPubKey',
+
+	'my-auth.private_key' => __DIR__ . '/my-auth-private.pem',
+	'my-auth.public_key' => __DIR__ . '/my-auth-public.pem',
 ];

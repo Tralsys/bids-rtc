@@ -4,9 +4,6 @@ namespace dev_t0r\bids_rtc\signaling\auth;
 
 use dev_t0r\bids_rtc\signaling\Constants;
 use dev_t0r\bids_rtc\signaling\Utils;
-use Kreait\Firebase\Contract\Auth;
-use Kreait\Firebase\Exception\Auth\FailedToVerifyToken;
-use Lcobucci\JWT\UnencryptedToken;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -17,7 +14,7 @@ use Psr\Log\LoggerInterface;
 final class MyAuthMiddleware implements MiddlewareInterface
 {
 	public function __construct(
-		private readonly Auth $auth,
+		private readonly MyAuthUtil $authUtil,
 		private readonly LoggerInterface $logger,
 		private readonly ResponseFactoryInterface $responseFactory,
 	) {
@@ -38,7 +35,8 @@ final class MyAuthMiddleware implements MiddlewareInterface
 	private const int MAX_REQ_LIMIT_DATA_BYTES = self::MAX_REQ_LIMIT_DATA_COUNT * self::REQ_LIMIT_DATA_BYTES;
 	private const int REQ_LIMIT_DATA_SHRINK_TO_BYTES = self::MAX_REQ_LIMIT_DATA_SHRINK_TO * self::REQ_LIMIT_DATA_BYTES;
 
-	public const string ATTR_NAME_TOKEN_OBJ = 'tokenObj';
+	public const string ATTR_NAME_UID = 'tokenObj';
+	public const string ATTR_NAME_CLIENT_ID = 'tokenObj';
 
 	public function process(
 		ServerRequestInterface $request,
@@ -52,23 +50,14 @@ final class MyAuthMiddleware implements MiddlewareInterface
 			$tokenStr = $request->getHeader('Authorization')[0];
 			if ($tokenStr != null && preg_match('/^Bearer\s+(.*)$/', $tokenStr, $matches)) {
 				$tokenStr = $matches[1];
-				try {
-					$verifiedIdToken = $this->auth->verifyIdToken($tokenStr);
-
-					$request = $request->withAttribute($this::ATTR_NAME_TOKEN_OBJ, $verifiedIdToken);
-
-					$uid = $verifiedIdToken->claims()->get('sub');
-					$this->logger->info("Token uid: {uid}", ['uid' => $uid]);
-				} catch (FailedToVerifyToken $th) {
-					$errorMsg = $th->getMessage();
-					$this->logger->info("Token error - {message}", ['message' => $errorMsg]);
-
-					$isTokenExpired = str_contains($errorMsg, 'The token is expired');
-					$response = $this->responseFactory->createResponse();
-					return $isTokenExpired
-						? Utils::withError($response, 401, 'The token is expired')
-						: Utils::withError($response, 400, "JWT(JOSE) error - $errorMsg");
+				$parseTokenResult = $this->authUtil->parse($tokenStr, $this->responseFactory);
+				if (!$parseTokenResult->errorResponse != null) {
+					return $parseTokenResult->errorResponse;
 				}
+
+				$request = $request
+					->withAttribute($this::ATTR_NAME_UID, $parseTokenResult->uid)
+					->withAttribute($this::ATTR_NAME_CLIENT_ID, $parseTokenResult->clientId);
 			} else {
 				return Utils::withError($this->responseFactory->createResponse(), 400, 'Invalid token format');
 			}
@@ -203,15 +192,10 @@ final class MyAuthMiddleware implements MiddlewareInterface
 		return $unpackResult[1];
 	}
 
-	public static function getTokenOrNull(
-		ServerRequestInterface $request,
-	): ?UnencryptedToken {
-		return $request->getAttribute(self::ATTR_NAME_TOKEN_OBJ);
-	}
 	public static function getUserIdOrNull(
 		ServerRequestInterface $request,
 	): ?string {
-		return self::getTokenOrNull($request)?->claims()->get('sub');
+		return $request->getAttribute(self::ATTR_NAME_UID);
 	}
 	public static function getUserIdOrAnonymous(
 		ServerRequestInterface $request,

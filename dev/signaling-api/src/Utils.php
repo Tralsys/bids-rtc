@@ -2,6 +2,7 @@
 
 namespace dev_t0r\bids_rtc\signaling;
 
+use dev_t0r\bids_rtc\signaling\auth\MyAuthMiddleware;
 use dev_t0r\bids_rtc\signaling\RetValueOrError;
 use dev_t0r\bids_rtc\signaling\model\JsonDateTime;
 use Ramsey\Uuid\Uuid;
@@ -85,6 +86,11 @@ final class Utils
 
 	public static function getClientIdOrNull(\Psr\Http\Message\ServerRequestInterface $request): ?UuidInterface
 	{
+		$clientId = $request->getAttribute(MyAuthMiddleware::ATTR_NAME_CLIENT_ID);
+		if ($clientId != null) {
+			return $clientId;
+		}
+
 		$headers = $request->getHeaders();
 		if (!$request->hasHeader('X-Client-Id')) {
 			return null;
