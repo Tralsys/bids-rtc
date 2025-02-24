@@ -176,7 +176,7 @@ CREATE TABLE
 
 	PRIMARY KEY (
 		`sdp_id`
-	)
+	),
 
 	-- TODO: 一旦クライアントIDはクライアント側で生成するようにする
 	-- FOREIGN KEY (
@@ -190,5 +190,12 @@ CREATE TABLE
 	-- ) REFERENCES
 	-- 	`clients` (
 	-- 		`client_id`
-	-- )
+	-- ),
+
+	CREATE INDEX
+		`sdp_user_id_index`
+	ON
+		`sdp` (
+			`user_id`
+		)
 );
