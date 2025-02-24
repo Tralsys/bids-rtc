@@ -192,10 +192,8 @@ CREATE TABLE
 	-- 		`client_id`
 	-- ),
 
-	CREATE INDEX
-		`sdp_user_id_index`
-	ON
-		`sdp` (
+	INDEX
+		`sdp_user_id_index` (
 			`user_id`
 		)
 );
