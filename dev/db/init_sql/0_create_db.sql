@@ -90,6 +90,13 @@ CREATE TABLE
 		DEFAULT CURRENT_TIMESTAMP
 	,
 
+	`refresh_token`
+		VARCHAR(255)
+		NOT NULL
+		CHARACTER SET ascii
+		COLLATE ascii_bin
+	,
+
 	PRIMARY KEY (
 		`user_id`,
 		`client_id`
