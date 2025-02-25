@@ -10,7 +10,6 @@ ClientInfo:
     app_id:
       type: string
       format: uuid
-      readOnly: true
       description: |
         アプリID
     client_id:
