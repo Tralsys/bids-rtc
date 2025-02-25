@@ -51,8 +51,7 @@ class ClientInfo extends BaseModel
     "app_id" : {
       "type" : "string",
       "description" : "アプリID\n",
-      "format" : "uuid",
-      "readOnly" : true
+      "format" : "uuid"
     },
     "client_id" : {
       "type" : "string",
