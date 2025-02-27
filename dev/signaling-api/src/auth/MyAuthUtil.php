@@ -2,6 +2,9 @@
 
 namespace dev_t0r\bids_rtc\signaling\auth;
 
+use DateInterval;
+use dev_t0r\bids_rtc\signaling\RetValueOrError;
+use dev_t0r\bids_rtc\signaling\UtcClock;
 use dev_t0r\bids_rtc\signaling\Utils;
 use Kreait\Firebase\Contract\Auth;
 use Lcobucci\JWT\Configuration;
@@ -10,11 +13,20 @@ use Lcobucci\JWT\Validation\Constraint\IssuedBy;
 use Lcobucci\JWT\Validation\Constraint\SignedWith;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Log\LoggerInterface;
+use Ramsey\Uuid\Rfc4122\UuidInterface;
+use Ramsey\Uuid\Uuid;
 
 class MyAuthUtil
 {
+	private const string ISSUER_CLAIM_NAME = 'iss';
+	private const string USER_ID_CLAIM_NAME = 'sub';
 	private const string APP_ID_CLAIM_NAME = 'app_id';
 	private const string CLIENT_ID_CLAIM_NAME = 'client_id';
+	private const string KEY_TYPE_CLAIM_NAME = 'key_type';
+
+	private static readonly DateInterval $ACCESS_TOKEN_EXPIRE_INTERVAL = new DateInterval('PT1H');
+
+	private readonly UtcClock $utcClock;
 
 	public function __construct(
 		private readonly Auth $firebaseAuth,
@@ -26,24 +38,25 @@ class MyAuthUtil
 			new SignedWith($myAuthJoseConfig->signer(), $myAuthJoseConfig->signingKey()),
 			new IssuedBy($issuer),
 		);
+		$this->utcClock = new UtcClock();
 	}
 
 	public function parse(
 		string $tokenStr,
-		ResponseFactoryInterface $responseFactory,
 	): MyAuthCheckResult {
 		try {
 			$token = $this->myAuthJoseConfig->parser()->parse($tokenStr);
-			$tokenIssuer = $token->claims()->get('iss');
+			$tokenIssuer = $token->claims()->get(self::ISSUER_CLAIM_NAME);
 			if ($tokenIssuer == $this->issuer) {
-				return $this->parseMyToken($token, $responseFactory);
+				return $this->validateMyToken($token);
 			}
 
 			// 非効率だが、結局中でtoStringしており、また中の処理だけを切り出すのも面倒なため、strで渡す
 			$verifiedIdToken = $this->firebaseAuth->verifyIdToken($tokenStr);
-			$uid = $verifiedIdToken->claims()->get('sub');
+			$uid = $verifiedIdToken->claims()->get(self::USER_ID_CLAIM_NAME);
 			return new MyAuthCheckResult(
 				$uid,
+				null,
 				null,
 				null,
 			);
@@ -52,34 +65,122 @@ class MyAuthUtil
 			return new MyAuthCheckResult(
 				null,
 				null,
-				Utils::withError($responseFactory->createResponse(), 401, 'Invalid token'),
+				null,
+				RetValueOrError::withError(401, 'Invalid token'),
 			);
 		}
 	}
 
-	private function parseMyToken(
+	public function parseMyToken(
+		string $tokenStr,
+	): UnencryptedToken {
+		return $this->myAuthJoseConfig->parser()->parse($tokenStr);
+	}
+
+	public function validateMyToken(
 		UnencryptedToken $token,
-		ResponseFactoryInterface $responseFactory,
 	): MyAuthCheckResult {
-		if (!$this->isValidMyTokenSign($token)) {
+		if (!$this->myAuthJoseConfig->validator()->validate($token)) {
 			return new MyAuthCheckResult(
 				null,
 				null,
-				Utils::withError($responseFactory->createResponse(), 401, 'Invalid token signature'),
+				null,
+				RetValueOrError::withError(401, 'Invalid token signature'),
 			);
 		}
-		$uid = $token->claims()->get('sub');
+		$uid = $token->claims()->get(self::USER_ID_CLAIM_NAME);
+		$appId = $token->claims()->get(self::APP_ID_CLAIM_NAME);
 		$clientId = $token->claims()->get(self::CLIENT_ID_CLAIM_NAME);
+		$keyType = $token->claims()->get(self::KEY_TYPE_CLAIM_NAME);
+		if ($uid == null || $appId == null || $clientId == null || $keyType == null) {
+			return new MyAuthCheckResult(
+				null,
+				null,
+				null,
+				RetValueOrError::withError(401, 'Invalid token: some fields are missing'),
+			);
+		}
+		if ($uid === "" || $appId === "" || $clientId === "" || $keyType === "") {
+			return new MyAuthCheckResult(
+				null,
+				null,
+				null,
+				RetValueOrError::withError(401, 'Invalid token: some fields are empty'),
+			);
+		}
+		if (!Uuid::isValid($appId) || !Uuid::isValid($clientId)) {
+			return new MyAuthCheckResult(
+				$uid,
+				null,
+				null,
+				RetValueOrError::withError(401, 'Invalid token: not valid UUID'),
+			);
+		}
+		if (!MyAuthCheckResult::isKeyTypeValid($keyType)) {
+			return new MyAuthCheckResult(
+				$uid,
+				null,
+				null,
+				RetValueOrError::withError(401, 'Invalid token: key_type is invalid'),
+			);
+		}
 		return new MyAuthCheckResult(
 			$uid,
-			$clientId,
+			Uuid::fromString($appId),
+			Uuid::fromString($clientId),
 			null,
+			$keyType,
 		);
 	}
 
-	public function isValidMyTokenSign(
-		UnencryptedToken $token,
-	): bool {
-		return $this->myAuthJoseConfig->validator()->validate($token);
+	public function generateRefreshToken(
+		string $rawUserId,
+		UuidInterface $appId,
+		UuidInterface $clientId,
+	): string {
+		return $this->generateMyToken(
+			$rawUserId,
+			$appId,
+			$clientId,
+			MyAuthCheckResult::KEY_TYPE_REFRESH,
+		);
+	}
+
+	public function generateAccessToken(
+		string $rawUserId,
+		UuidInterface $appId,
+		UuidInterface $clientId,
+	): string {
+		return $this->generateMyToken(
+			$rawUserId,
+			$appId,
+			$clientId,
+			MyAuthCheckResult::KEY_TYPE_ACCESS,
+		);
+	}
+
+	private function generateMyToken(
+		string $rawUserId,
+		UuidInterface $appId,
+		UuidInterface $clientId,
+		string $keyType,
+	): string {
+		$now = $this->utcClock->now();
+		$tokenBuilder = $this->myAuthJoseConfig->builder()
+			->issuedBy($this->issuer)
+			->issuedAt($now)
+			->withClaim(self::USER_ID_CLAIM_NAME, $rawUserId)
+			->withClaim(self::APP_ID_CLAIM_NAME, $appId->toString())
+			->withClaim(self::CLIENT_ID_CLAIM_NAME, $clientId->toString())
+			->withClaim(self::KEY_TYPE_CLAIM_NAME, $keyType)
+		;
+		if ($keyType == MyAuthCheckResult::KEY_TYPE_ACCESS) {
+			$tokenBuilder = $tokenBuilder
+				->expiresAt($now->add(self::$ACCESS_TOKEN_EXPIRE_INTERVAL))
+			;
+		}
+		return $tokenBuilder
+			->getToken($this->myAuthJoseConfig->signer(), $this->myAuthJoseConfig->signingKey())
+			->toString();
 	}
 }

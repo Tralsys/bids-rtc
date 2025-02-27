@@ -2,6 +2,7 @@
 
 namespace dev_t0r\bids_rtc\signaling\api;
 
+use dev_t0r\bids_rtc\signaling\auth\MyAuthUtil;
 use dev_t0r\bids_rtc\signaling\model\ClientInfo;
 use dev_t0r\bids_rtc\signaling\RetValueOrError;
 use dev_t0r\bids_rtc\signaling\service\ClientManagementService;
@@ -21,10 +22,12 @@ class ClientManagementApi extends AbstractClientManagementApi
 	public function __construct(
 		PDO $db,
 		private readonly LoggerInterface $logger,
+		MyAuthUtil $authUtil,
 	) {
 		$this->service = new ClientManagementService(
 			$db,
 			$this->logger,
+			$authUtil,
 		);
 	}
 
@@ -33,7 +36,7 @@ class ClientManagementApi extends AbstractClientManagementApi
 		ResponseInterface $response,
 		string $clientId,
 	): ResponseInterface {
-		$prepareResponse = $this->service->setUserIdAndClientId($request, $response);
+		$prepareResponse = $this->service->setUserId($request, $response);
 		if ($prepareResponse != null) {
 			return $prepareResponse;
 		}
@@ -84,7 +87,7 @@ class ClientManagementApi extends AbstractClientManagementApi
 		ResponseInterface $response,
 		string $clientId,
 	): ResponseInterface {
-		$prepareResponse = $this->service->setUserIdAndClientId($request, $response);
+		$prepareResponse = $this->service->setUserId($request, $response);
 		if ($prepareResponse != null) {
 			return $prepareResponse;
 		}
@@ -109,15 +112,27 @@ class ClientManagementApi extends AbstractClientManagementApi
 		ServerRequestInterface $request,
 		ResponseInterface $response,
 	): ResponseInterface {
-		$message = "How about implementing getClientInfoList as a GET method in dev_t0r\bids_rtc\signaling\api\ClientManagementApi class?";
-		throw new HttpNotImplementedException($request, $message);
+		$preparingResponse = $this->service->setUserId($request, $response);
+		if ($preparingResponse != null) {
+			return $preparingResponse;
+		}
+
+		try {
+			$clientInfoList = $this->service->getClientInfoList();
+			return Utils::withJson($response, $clientInfoList);
+		} catch (RetValueOrError $e) {
+			return $e->getResponseWithJson($response);
+		} catch (\Exception $e) {
+			$this->logger->error($e->getMessage());
+			return Utils::withError($response, 500, $e->getMessage());
+		}
 	}
 
 	public function registerClientInfo(
 		ServerRequestInterface $request,
 		ResponseInterface $response,
 	): ResponseInterface {
-		$preparingResponse = $this->service->setUserIdAndClientId($request, $response);
+		$preparingResponse = $this->service->setUserId($request, $response);
 		if ($preparingResponse != null) {
 			return $preparingResponse;
 		}

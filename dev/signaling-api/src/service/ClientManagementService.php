@@ -2,7 +2,9 @@
 
 namespace dev_t0r\bids_rtc\signaling\service;
 
+use dev_t0r\bids_rtc\signaling\auth\MyAuthCheckResult;
 use dev_t0r\bids_rtc\signaling\auth\MyAuthMiddleware;
+use dev_t0r\bids_rtc\signaling\auth\MyAuthUtil;
 use dev_t0r\bids_rtc\signaling\model\ClientInfo;
 use dev_t0r\bids_rtc\signaling\model\ClientInfoWithToken;
 use dev_t0r\bids_rtc\signaling\repo\ClientTableRepo;
@@ -23,15 +25,15 @@ class ClientManagementService
 	public function __construct(
 		private readonly PDO $db,
 		private readonly LoggerInterface $logger,
+		private readonly MyAuthUtil $authUtil,
 	) {
 		$this->repo = new ClientTableRepo($this->db, $this->logger);
 	}
 
 	private string $rawUserId;
 	private string $hashedUserId;
-	private UuidInterface $clientId;
 	private SDPEncryptAndDecrypt $encryptAndDecrypt;
-	public function setUserIdAndClientId(
+	public function setUserId(
 		ServerRequestInterface $request,
 		ResponseInterface $response,
 	): ?ResponseInterface {
@@ -40,10 +42,16 @@ class ClientManagementService
 			return Utils::withUnauthorizedError($response);
 		}
 
-		$this->rawUserId = $userId;
-		$this->hashedUserId = Utils::getHashedUserId($userId);
+		$this->setUserIdInternal($userId);
 
 		return null;
+	}
+
+	private function setUserIdInternal(
+		string $userId,
+	): void {
+		$this->rawUserId = $userId;
+		$this->hashedUserId = Utils::getHashedUserId($userId);
 	}
 
 	public function deleteClientInfo(
@@ -63,21 +71,43 @@ class ClientManagementService
 	public function getClientAccessToken(
 		string $unverifiedRawRefreshToken,
 	): string {
-		// JWT検証
-		// JWT形式エラーは400
-		// JWT署名エラーは401
-		// JWT有効期限切れは401
-		// RefreshTokenではないものだったら400
+		try {
+			$refreshToken = $this->authUtil->parseMyToken($unverifiedRawRefreshToken);
+			if ($refreshToken == null) {
+				throw RetValueOrError::withError(400, "Invalid token");
+			}
 
-		// RefreshTokenからclientIdを取得
-		// clientIdが存在しない場合は400
+			$refreshTokenInfo = $this->authUtil->validateMyToken($refreshToken);
+			if ($refreshTokenInfo->error != null) {
+				throw $refreshTokenInfo->error;
+			} else if ($refreshTokenInfo->keyType !== MyAuthCheckResult::KEY_TYPE_REFRESH) {
+				throw RetValueOrError::withError(400, "Invalid token type");
+			}
 
-		// 得られたclientIdを元に、DBからrefresh tokenのhashを取得
-		// hashが存在しない場合は404
-		// hashが一致しない場合は401
+			$this->setUserIdInternal($refreshTokenInfo->uid);
+			$appId = $refreshTokenInfo->appId;
+			$clientId = $refreshTokenInfo->clientId;
 
-		// hashが一致したら、新しいAccessTokenを生成して返す
-		// 生成に失敗したら500
+			// 得られたclientIdを元に、DBからrefresh tokenのhashを取得
+			$refreshTokenHash = $this->repo->selectOneRefreshToken(
+				$this->hashedUserId,
+				$clientId,
+			);
+			if ($refreshTokenHash == null) {
+				throw RetValueOrError::withError(404, "Not Found: $clientId");
+			}
+			if (!password_verify($unverifiedRawRefreshToken, $refreshTokenHash)) {
+				throw RetValueOrError::withError(401, "Invalid token");
+			}
+
+			return $this->authUtil->generateAccessToken(
+				$this->rawUserId,
+				$appId,
+				$clientId,
+			);
+		} catch (\PDOException $e) {
+			throw RetValueOrError::withError(500, "Database error: " . $e->getMessage());
+		}
 	}
 
 	public function getClientInfo(
@@ -98,6 +128,10 @@ class ClientManagementService
 		}
 	}
 
+	/**
+	 * クライアント情報をリストで返す
+	 * @return array<ClientInfo>
+	 */
 	public function getClientInfoList(
 	): array {
 		try {
@@ -106,12 +140,12 @@ class ClientManagementService
 				0,
 				self::LIST_LIMIT,
 			);
-			$clientInfoList = array_map(
+			$apiClientInfoList = array_map(
 				fn($clientInfo) => $clientInfo->toApiClientInfo(),
 				$clientInfoList,
 			);
 
-			return $clientInfoList;
+			return $apiClientInfoList;
 		} catch (\PDOException $e) {
 			throw RetValueOrError::withError(500, "Database error: " . $e->getMessage());
 		}
@@ -130,8 +164,11 @@ class ClientManagementService
 			}
 
 			$clientId = Uuid::uuid7();
-			// TODO: リフレッシュトークン生成
-			$refreshToken = "dummy";
+			$refreshToken = $this->authUtil->generateRefreshToken(
+				$this->rawUserId,
+				$appId,
+				$clientId,
+			);
 			$hashedRefreshToken = password_hash($refreshToken, PASSWORD_DEFAULT);
 
 			$this->db->beginTransaction();

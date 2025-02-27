@@ -153,7 +153,7 @@ final class RegisterDependencies
 				return $config;
 			})
 				->parameter('privateKeyPath', \DI\get('my-auth.private_key'))
-				->parameter('publicKeyPath', \realpath('my-auth.public_key'))
+				->parameter('publicKeyPath', \DI\get('my-auth.public_key'))
 				->parameter('issuer', \DI\get('app.name'))
 			,
 
