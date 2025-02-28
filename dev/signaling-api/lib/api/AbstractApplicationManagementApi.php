@@ -58,4 +58,25 @@ abstract class AbstractApplicationManagementApi
         $message = "How about implementing getApplicationInfo as a GET method in dev_t0r\bids_rtc\signaling\api\ApplicationManagementApi class?";
         throw new HttpNotImplementedException($request, $message);
     }
+
+    /**
+     * POST postApplicationInfo
+     * Summary: Applicationを作成する
+     * Notes: アプリケーションを作成する (アプリ作成権限がある場合のみ実行可能)
+     * Output-Formats: [application/json]
+     *
+     * @param ServerRequestInterface $request  Request
+     * @param ResponseInterface      $response Response
+     *
+     * @return ResponseInterface
+     * @throws HttpNotImplementedException to force implementation class to override this method
+     */
+    public function postApplicationInfo(
+        ServerRequestInterface $request,
+        ResponseInterface $response
+    ): ResponseInterface {
+        $body = $request->getParsedBody();
+        $message = "How about implementing postApplicationInfo as a POST method in dev_t0r\bids_rtc\signaling\api\ApplicationManagementApi class?";
+        throw new HttpNotImplementedException($request, $message);
+    }
 }

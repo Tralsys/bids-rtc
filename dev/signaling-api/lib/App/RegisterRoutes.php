@@ -65,6 +65,41 @@ class RegisterRoutes
             ],
         ],
         [
+            'httpMethod' => 'POST',
+            'basePathWithoutHost' => '/signaling',
+            'path' => '/apps',
+            'apiPackage' => 'dev_t0r\bids_rtc\signaling\api',
+            'classname' => 'AbstractApplicationManagementApi',
+            'userClassname' => 'ApplicationManagementApi',
+            'operationId' => 'postApplicationInfo',
+            'responses' => [
+                '200' => [
+                    'jsonSchema' => '{
+  "description" : "作成結果",
+  "content" : {
+    "application/json" : {
+      "schema" : {
+        "$ref" : "#/components/schemas/ApplicationInfo"
+      }
+    }
+  }
+}',
+                ],
+            ],
+            'authMethods' => [
+                // http security schema named 'bearerAuth'
+                [
+                    'type' => 'http',
+                    'scheme' => 'bearer',
+                    'bearerFormat' => 'JWT',
+                    'isBasic' => false,
+                    'isBearer' => true,
+                    'isApiKey' => false,
+                    'isOAuth' => false,
+                ],
+            ],
+        ],
+        [
             'httpMethod' => 'GET',
             'basePathWithoutHost' => '/signaling',
             'path' => '/apps/{appId}',
