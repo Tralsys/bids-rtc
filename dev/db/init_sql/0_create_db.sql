@@ -90,11 +90,12 @@ CREATE TABLE
 		DEFAULT CURRENT_TIMESTAMP
 	,
 
+	-- Hashed
 	`refresh_token`
 		VARCHAR(255)
-		NOT NULL
 		CHARACTER SET ascii
 		COLLATE ascii_bin
+		NOT NULL
 	,
 
 	PRIMARY KEY (
