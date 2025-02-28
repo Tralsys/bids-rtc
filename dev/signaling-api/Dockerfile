@@ -24,7 +24,8 @@ RUN composer install
 COPY \
 	./config \
 	/var/www/html/config
-RUN mv /var/www/html/config/prod/config.docker.inc.php /var/www/html/config/prod/config.inc.php
+RUN mv /var/www/html/config/prod/config.docker.inc.php /var/www/html/config/prod/config.inc.php && \
+	chown www-data:www-data /var/www/html/config/prod/*
 COPY \
 	./lib \
 	/var/www/html/lib
@@ -34,5 +35,7 @@ COPY \
 COPY \
 	./src \
 	/var/www/html/src
+
+ENV APP_IS_DOCKER=true
 
 EXPOSE 80
