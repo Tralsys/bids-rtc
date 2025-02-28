@@ -1,15 +1,12 @@
 <?php
 
-putenv('FIREBASE_AUTH_EMULATOR_HOST=localhost:9099');
+putenv('FIREBASE_AUTH_EMULATOR_HOST=firebase:9099');
 
 return [
 	// PDO
 	'pdo.dsn' => 'mysql:host=mysql;dbname=test;charset=utf8mb4',
 	'pdo.username' => 'test',
 	'pdo.password' => 'test',
-	'pdo.options' => [
-		\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-	],
 
 	// logger
 	'logger.name' => 'App',
