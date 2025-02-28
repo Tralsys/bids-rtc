@@ -7,6 +7,7 @@ use dev_t0r\bids_rtc\signaling\RetValueOrError;
 use dev_t0r\bids_rtc\signaling\UtcClock;
 use Kreait\Firebase\Contract\Auth;
 use Lcobucci\JWT\Configuration;
+use Lcobucci\JWT\Token\InvalidTokenStructure;
 use Lcobucci\JWT\UnencryptedToken;
 use Lcobucci\JWT\Validation\Constraint\IssuedBy;
 use Lcobucci\JWT\Validation\Constraint\SignedWith;
@@ -23,21 +24,25 @@ class MyAuthUtil
 	private const string KEY_TYPE_CLAIM_NAME = 'key_type';
 	private const string ROLE_CLAIM_NAME = 'role';
 
-	private static readonly DateInterval $ACCESS_TOKEN_EXPIRE_INTERVAL = new DateInterval('PT1H');
+	private readonly DateInterval $ACCESS_TOKEN_EXPIRE_INTERVAL;
 
 	private readonly UtcClock $utcClock;
+	private readonly bool $isDebug;
 
 	public function __construct(
 		private readonly Auth $firebaseAuth,
 		private readonly Configuration $myAuthJoseConfig,
 		private readonly LoggerInterface $logger,
 		private readonly string $issuer,
+		string $isDebug,
 	) {
+		$this->ACCESS_TOKEN_EXPIRE_INTERVAL = new DateInterval('PT1H');
 		$myAuthJoseConfig->setValidationConstraints(
 			new SignedWith($myAuthJoseConfig->signer(), $myAuthJoseConfig->signingKey()),
 			new IssuedBy($issuer),
 		);
 		$this->utcClock = new UtcClock();
+		$this->isDebug = $isDebug === 'true';
 	}
 
 	public function parse(
@@ -49,11 +54,24 @@ class MyAuthUtil
 			if ($tokenIssuer == $this->issuer) {
 				return $this->validateMyToken($token);
 			}
+		} catch (\Exception $e) {
+			if (!($e instanceof InvalidTokenStructure && $this->isDebug)) {
+				$this->logger->error("Failed to parse token: " . $e->getMessage());
+				return new MyAuthCheckResult(
+					null,
+					null,
+					null,
+					RetValueOrError::withError(401, 'Invalid token'),
+				);
+			}
+		}
 
+		try {
 			// 非効率だが、結局中でtoStringしており、また中の処理だけを切り出すのも面倒なため、strで渡す
 			$verifiedIdToken = $this->firebaseAuth->verifyIdToken($tokenStr);
 			$uid = $verifiedIdToken->claims()->get(self::USER_ID_CLAIM_NAME);
 			$role = $verifiedIdToken->claims()->get(self::ROLE_CLAIM_NAME);
+			$this->logger->debug("Firebase token verified: uid=$uid, role=$role");
 			return new MyAuthCheckResult(
 				$uid,
 				null,
@@ -178,7 +196,7 @@ class MyAuthUtil
 		;
 		if ($keyType == MyAuthCheckResult::KEY_TYPE_ACCESS) {
 			$tokenBuilder = $tokenBuilder
-				->expiresAt($now->add(self::$ACCESS_TOKEN_EXPIRE_INTERVAL))
+				->expiresAt($now->add($this->ACCESS_TOKEN_EXPIRE_INTERVAL))
 			;
 		}
 		return $tokenBuilder

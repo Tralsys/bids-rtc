@@ -52,7 +52,7 @@ final class MyAuthMiddleware implements MiddlewareInterface
 			if ($tokenStr != null && preg_match('/^Bearer\s+(.*)$/', $tokenStr, $matches)) {
 				$tokenStr = $matches[1];
 				$parseTokenResult = $this->authUtil->parse($tokenStr);
-				if (!$parseTokenResult->error != null) {
+				if ($parseTokenResult->error != null) {
 					return $parseTokenResult->error->getResponseWithJson($this->responseFactory->createResponse());
 				}
 

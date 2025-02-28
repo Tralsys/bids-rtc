@@ -162,6 +162,7 @@ final class RegisterDependencies
 				\DI\get(\Lcobucci\JWT\Configuration::class),
 				\DI\get(\Psr\Log\LoggerInterface::class),
 				\DI\get('app.name'),
+				\DI\env('APP_IS_DOCKER'),
 			),
 
 		]);
