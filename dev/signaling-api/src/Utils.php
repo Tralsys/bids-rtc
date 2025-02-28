@@ -135,7 +135,8 @@ final class Utils
 			return null;
 		}
 
-		$date = \DateTime::createFromFormat('Y-m-d H:i:s.u', $dateStr, self::$UTC);
+		$format = str_contains($dateStr, '.') ? 'Y-m-d H:i:s.u' : 'Y-m-d H:i:s';
+		$date = \DateTime::createFromFormat($format, $dateStr, self::$UTC);
 		if ($date === false) {
 			throw new \Exception("Invalid date string: $dateStr");
 		}
