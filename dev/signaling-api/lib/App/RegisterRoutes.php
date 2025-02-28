@@ -125,7 +125,7 @@ class RegisterRoutes
             ],
         ],
         [
-            'httpMethod' => 'GET',
+            'httpMethod' => 'PUT',
             'basePathWithoutHost' => '/signaling',
             'path' => '/client_token',
             'apiPackage' => 'dev_t0r\bids_rtc\signaling\api',

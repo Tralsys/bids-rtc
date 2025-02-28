@@ -60,7 +60,7 @@ abstract class AbstractClientManagementApi
     }
 
     /**
-     * GET getClientAccessToken
+     * PUT getClientAccessToken
      * Summary: Clientのアクセストークンを取得する
      * Notes: リフレッシュトークンを用いて、アクセストークンを取得する
      * Output-Formats: [application/jose, application/json]
@@ -76,7 +76,7 @@ abstract class AbstractClientManagementApi
         ResponseInterface $response
     ): ResponseInterface {
         $body = $request->getParsedBody();
-        $message = "How about implementing getClientAccessToken as a GET method in dev_t0r\bids_rtc\signaling\api\ClientManagementApi class?";
+        $message = "How about implementing getClientAccessToken as a PUT method in dev_t0r\bids_rtc\signaling\api\ClientManagementApi class?";
         throw new HttpNotImplementedException($request, $message);
     }
 
