@@ -1,0 +1,26 @@
+path:
+  post:
+    summary: Applicationを作成する
+    operationId: postApplicationInfo
+    description: |
+      アプリケーションを作成する (アプリ作成権限がある場合のみ実行可能)
+    tags:
+      - Application Management
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApplicationInfo"
+    responses:
+      "200":
+        description: 作成結果
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplicationInfo"
+
+components:
+  $ref: "../../openapi.yaml#/components"

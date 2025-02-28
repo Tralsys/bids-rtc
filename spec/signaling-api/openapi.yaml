@@ -24,6 +24,8 @@ paths:
   /:
     $ref: "./paths/index.yaml#/path"
 
+  /apps:
+    $ref: "./paths/apps/index.yaml#/path"
   /apps/{appId}:
     $ref: "./paths/apps/app_id.yaml#/path"
 
