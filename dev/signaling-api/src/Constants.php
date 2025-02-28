@@ -61,4 +61,6 @@ final class Constants
 	public const BULK_INSERT_MAX_COUNT = 100;
 
 	public const HEADER_TOTAL_COUNT = 'X-Total-Count';
+
+	public const string ROLE_ADMIN = 'admin';
 }

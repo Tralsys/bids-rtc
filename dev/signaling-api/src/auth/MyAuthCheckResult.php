@@ -21,6 +21,7 @@ class MyAuthCheckResult
 		public readonly ?UuidInterface $clientId,
 		public readonly ?RetValueOrError $error,
 		public readonly string $keyType = self::KEY_TYPE_ACCESS,
+		public readonly ?string $role,
 	) {
 	}
 }

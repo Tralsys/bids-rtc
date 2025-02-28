@@ -19,7 +19,7 @@ use Ramsey\Uuid\UuidInterface;
 
 class ClientManagementService
 {
-	const int LIST_LIMIT = 100;
+	private const int LIST_LIMIT = 100;
 
 	private readonly ClientTableRepo $repo;
 	public function __construct(

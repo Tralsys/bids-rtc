@@ -35,8 +35,9 @@ final class MyAuthMiddleware implements MiddlewareInterface
 	private const int MAX_REQ_LIMIT_DATA_BYTES = self::MAX_REQ_LIMIT_DATA_COUNT * self::REQ_LIMIT_DATA_BYTES;
 	private const int REQ_LIMIT_DATA_SHRINK_TO_BYTES = self::MAX_REQ_LIMIT_DATA_SHRINK_TO * self::REQ_LIMIT_DATA_BYTES;
 
-	public const string ATTR_NAME_UID = 'tokenObj';
-	public const string ATTR_NAME_CLIENT_ID = 'tokenObj';
+	public const string ATTR_NAME_UID = 'uid';
+	public const string ATTR_NAME_CLIENT_ID = 'clientId';
+	public const string ATTR_NAME_USER_ROLE = 'userRole';
 
 	public function process(
 		ServerRequestInterface $request,
@@ -57,7 +58,9 @@ final class MyAuthMiddleware implements MiddlewareInterface
 
 				$request = $request
 					->withAttribute($this::ATTR_NAME_UID, $parseTokenResult->uid)
-					->withAttribute($this::ATTR_NAME_CLIENT_ID, $parseTokenResult->clientId);
+					->withAttribute($this::ATTR_NAME_CLIENT_ID, $parseTokenResult->clientId)
+					->withAttribute($this::ATTR_NAME_USER_ROLE, $parseTokenResult->role);
+				;
 			} else {
 				return Utils::withError($this->responseFactory->createResponse(), 400, 'Invalid token format');
 			}
@@ -201,6 +204,13 @@ final class MyAuthMiddleware implements MiddlewareInterface
 		ServerRequestInterface $request,
 	): string {
 		return self::getUserIdOrNull($request) ?? Constants::UID_ANONYMOUS;
+	}
+
+	public static function getIsAdminRole(
+		ServerRequestInterface $request,
+	): bool {
+		$role = $request->getAttribute(self::ATTR_NAME_USER_ROLE);
+		return $role === Constants::ROLE_ADMIN;
 	}
 }
 

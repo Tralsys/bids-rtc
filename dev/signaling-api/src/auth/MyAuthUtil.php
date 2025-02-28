@@ -5,13 +5,11 @@ namespace dev_t0r\bids_rtc\signaling\auth;
 use DateInterval;
 use dev_t0r\bids_rtc\signaling\RetValueOrError;
 use dev_t0r\bids_rtc\signaling\UtcClock;
-use dev_t0r\bids_rtc\signaling\Utils;
 use Kreait\Firebase\Contract\Auth;
 use Lcobucci\JWT\Configuration;
 use Lcobucci\JWT\UnencryptedToken;
 use Lcobucci\JWT\Validation\Constraint\IssuedBy;
 use Lcobucci\JWT\Validation\Constraint\SignedWith;
-use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Rfc4122\UuidInterface;
 use Ramsey\Uuid\Uuid;
@@ -23,6 +21,7 @@ class MyAuthUtil
 	private const string APP_ID_CLAIM_NAME = 'app_id';
 	private const string CLIENT_ID_CLAIM_NAME = 'client_id';
 	private const string KEY_TYPE_CLAIM_NAME = 'key_type';
+	private const string ROLE_CLAIM_NAME = 'role';
 
 	private static readonly DateInterval $ACCESS_TOKEN_EXPIRE_INTERVAL = new DateInterval('PT1H');
 
@@ -54,11 +53,14 @@ class MyAuthUtil
 			// 非効率だが、結局中でtoStringしており、また中の処理だけを切り出すのも面倒なため、strで渡す
 			$verifiedIdToken = $this->firebaseAuth->verifyIdToken($tokenStr);
 			$uid = $verifiedIdToken->claims()->get(self::USER_ID_CLAIM_NAME);
+			$role = $verifiedIdToken->claims()->get(self::ROLE_CLAIM_NAME);
 			return new MyAuthCheckResult(
 				$uid,
 				null,
 				null,
 				null,
+				MyAuthCheckResult::KEY_TYPE_ACCESS,
+				$role,
 			);
 		} catch (\Exception $e) {
 			$this->logger->error("Failed to parse token: " . $e->getMessage());

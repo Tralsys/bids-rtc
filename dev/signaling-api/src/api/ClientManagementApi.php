@@ -12,7 +12,6 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
-use Slim\Exception\HttpNotImplementedException;
 
 class ClientManagementApi extends AbstractClientManagementApi
 {
@@ -143,7 +142,7 @@ class ClientManagementApi extends AbstractClientManagementApi
 			$requestedClientInfo->setData($body);
 			$name = $requestedClientInfo->name;
 			$appId = Uuid::fromString($requestedClientInfo->app_id);
-			if (self::MAX_CLIENT_NAME_LENGTH < strlen($name)) {
+			if (self::MAX_CLIENT_NAME_LENGTH < mb_strlen($name)) {
 				return Utils::withError($response, 400, 'Client name is too long');
 			}
 
