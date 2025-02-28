@@ -1,5 +1,5 @@
 path:
-  get:
+  put:
     summary: Clientのアクセストークンを取得する
     operationId: getClientAccessToken
     description: |
