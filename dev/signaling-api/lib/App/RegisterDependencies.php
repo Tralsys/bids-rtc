@@ -135,7 +135,7 @@ final class RegisterDependencies
 			,
 			\Kreait\Firebase\Contract\Auth::class => \DI\factory([\Kreait\Firebase\Factory::class, 'createAuth']),
 
-			\Lcobucci\JWT\Configuration::class => \DI\factory(function (string $privateKeyPath, string $publicKeyPath, string $issuer) {
+			\Lcobucci\JWT\Configuration::class => \DI\factory(function (string $privateKeyPath, string $publicKeyPath) {
 				return \Lcobucci\JWT\Configuration::forAsymmetricSigner(
 					signer: new \Lcobucci\JWT\Signer\Rsa\Sha256(),
 					signingKey: \Lcobucci\JWT\Signer\Key\InMemory::file($privateKeyPath),
@@ -144,14 +144,13 @@ final class RegisterDependencies
 			})
 				->parameter('privateKeyPath', \DI\get('my-auth.private_key'))
 				->parameter('publicKeyPath', \DI\get('my-auth.public_key'))
-				->parameter('issuer', \DI\get('app.name'))
 			,
 			\dev_t0r\bids_rtc\signaling\auth\MyAuthUtil::class => \DI\create()->constructor(
 				\DI\get(\Kreait\Firebase\Contract\Auth::class),
 				\DI\get(\Lcobucci\JWT\Configuration::class),
 				\DI\get(\Psr\Log\LoggerInterface::class),
 				\DI\get('app.name'),
-				\DI\env('APP_IS_DOCKER'),
+				\DI\env('APP_IS_DOCKER', 'false'),
 			),
 
 		]);
