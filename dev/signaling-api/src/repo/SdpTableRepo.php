@@ -323,7 +323,7 @@ class SdpTableRepo
 				AND `sdp1`.`created_at` >= DATE_SUB(NOW(), INTERVAL :check_minutes MINUTE)
 			SQL;
 		if (0 < count($exclude_offer_client_ids)) {
-			$queryStr .= ' AND `sdp`.`offer_client_id` NOT IN (';
+			$queryStr .= ' AND `sdp1`.`offer_client_id` NOT IN (';
 			$queryStr .= implode(',', array_map(
 				fn($i) => ":exclude_offer_client_id_$i",
 				range(0, $excludeOfferClientIdListLength - 1),
