@@ -8,6 +8,7 @@ use dev_t0r\bids_rtc\signaling\UtcClock;
 use Kreait\Firebase\Contract\Auth;
 use Lcobucci\JWT\Configuration;
 use Lcobucci\JWT\Token\InvalidTokenStructure;
+use Lcobucci\JWT\Token\RegisteredClaims;
 use Lcobucci\JWT\UnencryptedToken;
 use Lcobucci\JWT\Validation\Constraint\IssuedBy;
 use Lcobucci\JWT\Validation\Constraint\SignedWith;
@@ -18,10 +19,10 @@ use Ramsey\Uuid\Uuid;
 class MyAuthUtil
 {
 	private const string ISSUER_CLAIM_NAME = 'iss';
-	private const string USER_ID_CLAIM_NAME = 'sub';
+	private const string USER_ID_CLAIM_NAME = RegisteredClaims::SUBJECT; // sub以外にする場合、MyJWT生成の処理に修正が必要
 	private const string APP_ID_CLAIM_NAME = 'app_id';
 	private const string CLIENT_ID_CLAIM_NAME = 'client_id';
-	private const string KEY_TYPE_CLAIM_NAME = 'key_type';
+	private const string KEY_TYPE_CLAIM_NAME = 'typ';
 	private const string ROLE_CLAIM_NAME = 'role';
 
 	private readonly DateInterval $ACCESS_TOKEN_EXPIRE_INTERVAL;
@@ -94,18 +95,33 @@ class MyAuthUtil
 	public function parseMyToken(
 		string $tokenStr,
 	): UnencryptedToken {
+		$this->logger->debug("parseMyToken: $tokenStr");
 		return $this->myAuthJoseConfig->parser()->parse($tokenStr);
 	}
 
 	public function validateMyToken(
 		UnencryptedToken $token,
 	): MyAuthCheckResult {
-		if (!$this->myAuthJoseConfig->validator()->validate($token)) {
+		$isValidToken = $this->myAuthJoseConfig->validator()->validate(
+			$token,
+			new SignedWith($this->myAuthJoseConfig->signer(), $this->myAuthJoseConfig->verificationKey()),
+			new IssuedBy($this->issuer),
+		);
+		if (!$isValidToken) {
 			return new MyAuthCheckResult(
 				null,
 				null,
 				null,
 				RetValueOrError::withError(401, 'Invalid token signature'),
+			);
+		}
+		$isExpired = $token->isExpired($this->utcClock->now());
+		if ($isExpired) {
+			return new MyAuthCheckResult(
+				null,
+				null,
+				null,
+				RetValueOrError::withError(400, 'Token is expired'),
 			);
 		}
 		$uid = $token->claims()->get(self::USER_ID_CLAIM_NAME);
@@ -189,7 +205,7 @@ class MyAuthUtil
 		$tokenBuilder = $this->myAuthJoseConfig->builder()
 			->issuedBy($this->issuer)
 			->issuedAt($now)
-			->withClaim(self::USER_ID_CLAIM_NAME, $rawUserId)
+			->relatedTo($rawUserId) // sub
 			->withClaim(self::APP_ID_CLAIM_NAME, $appId->toString())
 			->withClaim(self::CLIENT_ID_CLAIM_NAME, $clientId->toString())
 			->withClaim(self::KEY_TYPE_CLAIM_NAME, $keyType)

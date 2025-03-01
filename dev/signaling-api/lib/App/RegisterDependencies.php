@@ -136,27 +136,16 @@ final class RegisterDependencies
 			\Kreait\Firebase\Contract\Auth::class => \DI\factory([\Kreait\Firebase\Factory::class, 'createAuth']),
 
 			\Lcobucci\JWT\Configuration::class => \DI\factory(function (string $privateKeyPath, string $publicKeyPath, string $issuer) {
-				$config = \Lcobucci\JWT\Configuration::forAsymmetricSigner(
-					new \Lcobucci\JWT\Signer\Rsa\Sha256(),
-					\Lcobucci\JWT\Signer\Key\InMemory::file(
-						$privateKeyPath,
-					),
-					\Lcobucci\JWT\Signer\Key\InMemory::file(
-						$publicKeyPath,
-					),
+				return \Lcobucci\JWT\Configuration::forAsymmetricSigner(
+					signer: new \Lcobucci\JWT\Signer\Rsa\Sha256(),
+					signingKey: \Lcobucci\JWT\Signer\Key\InMemory::file($privateKeyPath),
+					verificationKey: \Lcobucci\JWT\Signer\Key\InMemory::file($publicKeyPath),
 				);
-				$config->setValidationConstraints(
-					new \Lcobucci\JWT\Validation\Constraint\SignedWith($config->signer(), $config->signingKey()),
-					new \Lcobucci\JWT\Validation\Constraint\IssuedBy($issuer),
-					new \Lcobucci\JWT\Validation\Constraint\StrictValidAt(new \dev_t0r\bids_rtc\signaling\UtcClock()),
-				);
-				return $config;
 			})
 				->parameter('privateKeyPath', \DI\get('my-auth.private_key'))
 				->parameter('publicKeyPath', \DI\get('my-auth.public_key'))
 				->parameter('issuer', \DI\get('app.name'))
 			,
-
 			\dev_t0r\bids_rtc\signaling\auth\MyAuthUtil::class => \DI\create()->constructor(
 				\DI\get(\Kreait\Firebase\Contract\Auth::class),
 				\DI\get(\Lcobucci\JWT\Configuration::class),

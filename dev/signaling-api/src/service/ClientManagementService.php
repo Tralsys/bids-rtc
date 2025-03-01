@@ -156,6 +156,8 @@ class ClientManagementService
 		string $name,
 	): ClientInfoWithToken {
 		try {
+			$this->db->beginTransaction();
+
 			$count = $this->repo->count(
 				$this->hashedUserId,
 			);
@@ -171,7 +173,6 @@ class ClientManagementService
 			);
 			$hashedRefreshToken = password_hash($refreshToken, PASSWORD_DEFAULT);
 
-			$this->db->beginTransaction();
 			$insertResult = $this->repo->createNewClient(
 				$this->hashedUserId,
 				$appId,

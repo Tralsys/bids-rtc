@@ -63,9 +63,12 @@ class ClientManagementApi extends AbstractClientManagementApi
 		ServerRequestInterface $request,
 		ResponseInterface $response,
 	): ResponseInterface {
-		$unverifiedRawRefreshToken = $request->getParsedBody();
-
 		try {
+			$unverifiedRawRefreshToken = $request->getBody()->getContents();
+			if ($unverifiedRawRefreshToken === '') {
+				return Utils::withError($response, 400, 'Empty request body');
+			}
+
 			$accessToken = $this->service->getClientAccessToken($unverifiedRawRefreshToken);
 			if ($accessToken === null) {
 				return Utils::withError($response, 500, 'Internal server error');
@@ -76,7 +79,7 @@ class ClientManagementApi extends AbstractClientManagementApi
 		} catch (RetValueOrError $e) {
 			return $e->getResponseWithJson($response);
 		} catch (\Exception $e) {
-			$this->logger->error($e->getMessage());
+			$this->logger->error($e);
 			return Utils::withError($response, 500, $e->getMessage());
 		}
 	}
