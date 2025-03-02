@@ -1,4 +1,9 @@
-import { Configuration, SDPExchangeApi } from "@tralsys/bids-rtc-signaling-api";
+import {
+	ApplicationManagementApi,
+	ClientManagementApi,
+	Configuration,
+	SDPExchangeApi,
+} from "@tralsys/bids-rtc-signaling-api";
 import { IS_DOCKER_DEBUG, IS_LOCAL_DEBUG } from "../constants";
 import { auth } from "../firebase/firebase";
 
@@ -37,4 +42,6 @@ const apiConfig = new Configuration({
 	},
 });
 
+export const applicationManagementApi = new ApplicationManagementApi(apiConfig);
+export const clientManagementApi = new ClientManagementApi(apiConfig);
 export const sdpExchangeApi = new SDPExchangeApi(apiConfig);
