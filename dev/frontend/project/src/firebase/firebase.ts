@@ -3,6 +3,7 @@ import { FirebaseOptions, initializeApp } from "firebase/app";
 import {
 	connectAuthEmulator,
 	getAuth,
+	GithubAuthProvider,
 	GoogleAuthProvider,
 } from "firebase/auth";
 import { IS_DOCKER_DEBUG, IS_LOCAL_DEBUG } from "../constants";
@@ -32,12 +33,15 @@ function initFirebaseServices() {
 	}
 
 	const googleAuthProvider = new GoogleAuthProvider();
+	const githubAuthProvider = new GithubAuthProvider();
 
 	return {
 		analytics,
 		auth,
 		googleAuthProvider,
+		githubAuthProvider,
 	};
 }
 
-export const { analytics, auth, googleAuthProvider } = initFirebaseServices();
+export const { analytics, auth, googleAuthProvider, githubAuthProvider } =
+	initFirebaseServices();

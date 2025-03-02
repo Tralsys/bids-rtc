@@ -1,4 +1,5 @@
 import {
+	AuthProvider,
 	createUserWithEmailAndPassword,
 	signInWithEmailAndPassword,
 	signInWithPopup,
@@ -11,7 +12,11 @@ import {
 	useMemo,
 	useState,
 } from "react";
-import { auth, googleAuthProvider } from "../firebase/firebase";
+import {
+	auth,
+	googleAuthProvider,
+	githubAuthProvider,
+} from "../firebase/firebase";
 import {
 	Button,
 	Dialog,
@@ -23,7 +28,7 @@ import {
 	Typography,
 } from "@mui/material";
 import { MdOpenInNew, MdVisibility, MdVisibilityOff } from "react-icons/md";
-import { IoLogoGoogle } from "react-icons/io";
+import { IoLogoGithub, IoLogoGoogle } from "react-icons/io";
 import { IS_DEBUG } from "../constants";
 
 export default memo(function SignInUp() {
@@ -85,19 +90,30 @@ const DialogContent = memo<DialogContentProps>(function DialogContent({
 		[password]
 	);
 
-	const signInWithGoogle = useCallback(async () => {
+	const signInWith = useCallback(
+		async (provider: AuthProvider) => {
+			try {
+				setIsProcessing(true);
+				await signInWithPopup(auth, provider);
+				onClose();
+			} catch (e) {
+				console.error("Failed to sign in", e);
+				alert("Failed to sign in");
+			} finally {
+				setIsProcessing(false);
+			}
+		},
+		[onClose]
+	);
+	const signInWithGoogle = useCallback(() => {
 		console.log("Sign in with Google");
-		try {
-			setIsProcessing(true);
-			await signInWithPopup(auth, googleAuthProvider);
-			onClose();
-		} catch (e) {
-			console.error("Failed to sign in with Google", e);
-			alert("Failed to sign in with Google");
-		} finally {
-			setIsProcessing(false);
-		}
-	}, [onClose]);
+		signInWith(googleAuthProvider);
+	}, [signInWith]);
+
+	const signInWithGitHub = useCallback(async () => {
+		console.log("Sign in with GitHub");
+		signInWith(githubAuthProvider);
+	}, [signInWith]);
 
 	const handleSubmit = useCallback(
 		async (e: FormEvent<HTMLFormElement>) => {
@@ -152,6 +168,14 @@ const DialogContent = memo<DialogContentProps>(function DialogContent({
 				startIcon={<IoLogoGoogle />}
 			>
 				Sign in with Google
+			</Button>
+			<Button
+				variant="outlined"
+				disabled={isProcessing}
+				onClick={signInWithGitHub}
+				startIcon={<IoLogoGithub />}
+			>
+				Sign in with GitHub
 			</Button>
 			{IS_DEBUG && (
 				<>
