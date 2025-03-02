@@ -24,6 +24,7 @@ import {
 } from "@mui/material";
 import { MdOpenInNew, MdVisibility, MdVisibilityOff } from "react-icons/md";
 import { IoLogoGoogle } from "react-icons/io";
+import { IS_DEBUG } from "../constants";
 
 export default memo(function SignInUp() {
 	const [isProcessing, setIsProcessing] = useState(false);
@@ -31,9 +32,13 @@ export default memo(function SignInUp() {
 	const onClose = useCallback(() => setOpen(false), []);
 
 	useEffect(() => {
-		auth.onAuthStateChanged((user) => {
+		const unsubscribe = auth.onAuthStateChanged((user) => {
 			setOpen(user == null);
 		});
+
+		return () => {
+			unsubscribe();
+		};
 	}, []);
 
 	const onClickSignOut = useCallback(async () => {
@@ -74,7 +79,6 @@ const DialogContent = memo<DialogContentProps>(function DialogContent({
 	const [isProcessing, setIsProcessing] = useState(false);
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
-	const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
 	const passwordErrorMessage = useMemo(
 		() => getPasswordErrorMessage(password),
@@ -149,7 +153,71 @@ const DialogContent = memo<DialogContentProps>(function DialogContent({
 			>
 				Sign in with Google
 			</Button>
-			<Divider> or </Divider>
+			{IS_DEBUG && (
+				<>
+					<Divider> or </Divider>
+					<EMailAndPasswordInput
+						isProcessing={isProcessing}
+						email={email}
+						setEmail={setEmail}
+						password={password}
+						setPassword={setPassword}
+						passwordErrorMessage={passwordErrorMessage}
+					/>
+				</>
+			)}
+			<Button
+				href="https://github.com/Tralsys/bids-rtc/wiki/Terms-of-Use"
+				target="_blank"
+				variant="outlined"
+				size="small"
+				endIcon={<MdOpenInNew />}
+			>
+				利用規約
+			</Button>
+			{IS_DEBUG && (
+				<>
+					<Button
+						type="submit"
+						variant="contained"
+						disabled={!canSignInUpWithEmail || isProcessing}
+					>
+						Sign in
+					</Button>
+					<Button
+						variant="outlined"
+						disabled={!canSignInUpWithEmail || isProcessing}
+						onClick={onClickSignUp}
+					>
+						Sign Up
+					</Button>
+				</>
+			)}
+			{isProcessing && <LinearProgress />}
+		</Stack>
+	);
+});
+
+type EMailAndPasswordInputProps = {
+	isProcessing: boolean;
+	email: string;
+	setEmail: (email: string) => void;
+	password: string;
+	setPassword: (password: string) => void;
+	passwordErrorMessage: string | null;
+};
+const EMailAndPasswordInput = memo<EMailAndPasswordInputProps>(
+	function EMailAndPasswordInput({
+		isProcessing,
+		email,
+		setEmail,
+		password,
+		setPassword,
+		passwordErrorMessage,
+	}) {
+		const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+
+		return (
 			<Stack spacing={2}>
 				<TextField
 					label="Email"
@@ -186,33 +254,9 @@ const DialogContent = memo<DialogContentProps>(function DialogContent({
 					}}
 				/>
 			</Stack>
-			<Button
-				href="https://github.com/Tralsys/bids-rtc/wiki/Terms-of-Use"
-				target="_blank"
-				variant="outlined"
-				size="small"
-				endIcon={<MdOpenInNew />}
-			>
-				利用規約
-			</Button>
-			<Button
-				type="submit"
-				variant="contained"
-				disabled={!canSignInUpWithEmail || isProcessing}
-			>
-				Sign in
-			</Button>
-			<Button
-				variant="outlined"
-				disabled={!canSignInUpWithEmail || isProcessing}
-				onClick={onClickSignUp}
-			>
-				Sign Up
-			</Button>
-			{isProcessing && <LinearProgress />}
-		</Stack>
-	);
-});
+		);
+	}
+);
 
 const PASSWORD_MIN_LENGTH = 8;
 function getPasswordErrorMessage(password: string): string | null {
