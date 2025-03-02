@@ -68,7 +68,6 @@ return [
 	'pdo.password' => 'root',
 	'pdo.options' => [
 		\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-		\PDO::ATTR_AUTOCOMMIT => false,
 		\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET time_zone = \'+00:00\';',
 	],
 
