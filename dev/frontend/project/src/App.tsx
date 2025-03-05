@@ -5,6 +5,7 @@ import { useUserId } from "./firebase/FirebaseHook";
 import { Role, ROLE } from "./webrtc/ConnectionManager";
 import { ComponentType, FC, useCallback, useState } from "react";
 import ClientManagement from "./components/ClientManagement";
+import { BIDSSharedMemoryDataFieldInfo } from "./webrtc/BIDSSharedMemoryDataFieldInfo";
 
 const query = new URLSearchParams(window.location.search);
 const role: Role = (() => {
@@ -23,6 +24,10 @@ function App() {
 	const onClickBack = useCallback(() => {
 		setCurrentPage(null);
 	}, []);
+	console.log(
+		"BIDS Shared Memory Data Field Info",
+		BIDSSharedMemoryDataFieldInfo
+	);
 	return (
 		<>
 			<h1>BIDS-WebRTC Demo App</h1>

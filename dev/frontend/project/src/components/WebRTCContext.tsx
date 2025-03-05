@@ -1,25 +1,42 @@
-import { memo, PropsWithChildren, useEffect, useRef } from "react";
+import {
+	createContext,
+	memo,
+	PropsWithChildren,
+	useContext,
+	useEffect,
+	useState,
+} from "react";
 import { Role, RTCConnectionManager } from "../webrtc/ConnectionManager";
+
+const Context = createContext<RTCConnectionManager | null>(null);
+// eslint-disable-next-line react-refresh/only-export-components
+export function useRTCConnectionManager() {
+	return useContext(Context);
+}
 
 type WebRTCContextProps = {
 	role: Role;
 };
 export default memo<PropsWithChildren<WebRTCContextProps>>(
 	function WebRTCContext({ children, role }) {
-		const ref = useRef<RTCConnectionManager | null>(null);
+		const [connManager, setConnManager] = useState<RTCConnectionManager | null>(
+			null
+		);
+
 		useEffect(() => {
 			try {
-				const connManager = new RTCConnectionManager(role);
-				ref.current = connManager;
+				const _connManager = new RTCConnectionManager(role);
+				setConnManager(_connManager);
 				return () => {
-					ref.current = null;
-					connManager.Dispose();
+					setConnManager(null);
+					_connManager.Dispose();
 				};
 			} catch (e) {
 				console.error("Failed to start WebRTC", e);
 				alert("Failed to start WebRTC");
 			}
 		}, [role]);
-		return children;
+
+		return <Context.Provider value={connManager}>{children}</Context.Provider>;
 	}
 );
