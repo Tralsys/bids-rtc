@@ -1,8 +1,14 @@
 import { BIDSSharedMemoryData } from "./BIDSSharedMemoryData";
 
-export type FieldInfo<TPath extends string, TFieldType extends FieldType> = {
+export type FieldInfo<
+	TPath extends string,
+	TValueType,
+	TFieldType extends FieldType = FieldTypeFromType<TValueType>
+> = {
 	_path: TPath;
 	_type: TFieldType;
+	_equal: (a: TValueType, b: TValueType) => boolean;
+	__valueFieldForTypeRef?: TValueType;
 };
 export const FIELD_TYPE = {
 	NUMBER: "number",
@@ -11,6 +17,10 @@ export const FIELD_TYPE = {
 	OBJECT: "object",
 } as const;
 type FieldType = (typeof FIELD_TYPE)[keyof typeof FIELD_TYPE];
+const _fieldTypeIdSet = new Set(Object.values(FIELD_TYPE));
+function isFieldType(v: unknown): v is FieldType {
+	return _fieldTypeIdSet.has(v as FieldType);
+}
 
 export const BIDSSharedMemoryDataFieldInfo = getFields<
 	"BSMD",
@@ -57,39 +67,75 @@ type FieldTypeFromType<T> = T extends number
 
 type FieldInfoMap<TBasePath extends string, TObj extends object> = FieldInfo<
 	TBasePath,
+	TObj,
 	typeof FIELD_TYPE.OBJECT
-> & {
+> &
+	FieldInfoMapChildren<TBasePath, TObj>;
+type FieldInfoMapChildren<TBasePath extends string, TObj extends object> = {
 	[TField in Extract<keyof TObj, string>]: TObj[TField] extends object
 		? FieldInfoMap<`${TBasePath}.${TField}`, TObj[TField]>
-		: FieldInfo<`${TBasePath}.${TField}`, FieldTypeFromType<TObj[TField]>>;
+		: FieldInfo<`${TBasePath}.${TField}`, TObj[TField]>;
 };
 
+type GetFieldsArgType<TPath extends string, TObj extends object> = {
+	[TField in Extract<keyof TObj, string>]: TObj[TField] extends object
+		? FieldInfoMap<`${TPath}.${TField}`, TObj[TField]>
+		: FieldTypeFromType<TObj[TField]>;
+};
 function getFields<TPath extends string, TObj extends object>(
 	path: TPath,
-	fields: {
-		[TField in Extract<keyof TObj, string>]: TObj[TField] extends object
-			? FieldInfoMap<`${TPath}.${TField}`, TObj[TField]>
-			: FieldTypeFromType<TObj[TField]>;
+	fields: GetFieldsArgType<TPath, TObj>
+): FieldInfoMap<TPath, TObj> {
+	const fieldInfoEntries = Object.entries(fields).map(([field, type]) => {
+		const _field = field as keyof typeof fields;
+		const _type = type as (typeof fields)[typeof _field];
+		return convertEntries<TPath, TObj, typeof _field>(
+			path,
+			_field,
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			_type as any
+		);
+	});
+	const equalFuncList = Object.values(fieldInfoEntries).map(
+		([field, type]) => [field, type._equal] as const
+	);
+	const fieldInfoMap = Object.fromEntries(
+		fieldInfoEntries
+	) as unknown as FieldInfoMapChildren<TPath, TObj>;
+	return {
+		...fieldInfoMap,
+		_path: path,
+		_type: FIELD_TYPE.OBJECT,
+		_equal: (a, b) => {
+			for (const [field, equalFunc] of equalFuncList) {
+				if (!equalFunc(a[field], b[field])) {
+					return false;
+				}
+			}
+			return true;
+		},
+	};
+}
+
+function convertEntries<
+	TPath extends string,
+	TObj extends object,
+	TField extends Extract<keyof TObj, string>
+>(
+	path: TPath,
+	field: TField,
+	type: GetFieldsArgType<TField, TObj>[TField]
+): [TField, FieldInfo<`${TPath}.${TField}`, TObj[TField]>] {
+	if (!isFieldType(type)) {
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		return [field, type as any] as const;
 	}
-) {
-	const entries = Object.entries(fields).map(([field, type]) => [
+	return [
 		field,
-		typeof type === "object"
-			? type
-			: ({
-					_path: `${path}.${field}`,
-					_type: type as FieldType,
-			  } satisfies FieldInfo<`${TPath}.${string}`, FieldType>),
-	]);
-	const pushValue = <
-		T extends keyof FieldInfo<TPath, typeof FIELD_TYPE.OBJECT>
-	>(
-		field: T,
-		value: FieldInfo<TPath, typeof FIELD_TYPE.OBJECT>[T]
-	) => entries.push([field, value]);
-
-	pushValue("_path", path);
-	pushValue("_type", FIELD_TYPE.OBJECT);
-
-	return Object.fromEntries(entries) as FieldInfoMap<TPath, TObj>;
+		{
+			_path: `${path}.${field}` as const,
+			_type: type as FieldTypeFromType<TObj[TField]>,
+			_equal: (a, b) => a === b,
+		},
+	] as const;
 }
