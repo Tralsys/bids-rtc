@@ -3,10 +3,9 @@ import { FieldInfo } from "../webrtc/BIDSSharedMemoryDataFieldInfo";
 import { useBidsDataProviderContextValue } from "./BidsDataProvider";
 import { BIDSSharedMemoryData } from "../webrtc/BIDSSharedMemoryData";
 
-export function useBsmdValue<
-	T extends FieldInfo<`BSMD.${string}`, TValueType>,
-	TValueType
->(fieldInfo: T): TValueType | undefined {
+export function useBsmdValue<TValueType>(
+	fieldInfo: FieldInfo<`BSMD.${string}`, TValueType>
+): TValueType | undefined {
 	const context = useBidsDataProviderContextValue();
 	const [value, setValue] = useState<TValueType | undefined>(undefined);
 	const fieldPath = useMemo(() => fieldInfo._path.split("."), [fieldInfo]);
