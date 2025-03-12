@@ -9,10 +9,6 @@ export const ROLE = {
 	PROVIDER: "provider",
 	SUBSCRIBER: "subscriber",
 } as const;
-const PAIR_ROLE = {
-	provider: ROLE.SUBSCRIBER,
-	subscriber: ROLE.PROVIDER,
-} as const satisfies Record<Role, Role>;
 export type Role = (typeof ROLE)[keyof typeof ROLE];
 type SdpIdRef = { current: string };
 
@@ -330,7 +326,6 @@ export class RTCConnectionManager {
 
 	private async _setupDataChannel(dc: RTCDataChannel, sdpIdRef: SdpIdRef) {
 		const role = this._role;
-		const pairRole = PAIR_ROLE[role];
 		dc.onerror = (e) => this._onDataChannelError(sdpIdRef.current, e);
 		dc.onopen = (e: Event) => {
 			const event = e as RTCDataChannelEvent;
@@ -348,9 +343,6 @@ export class RTCConnectionManager {
 			dc.send(`Hello, world! from ${sdpId}[${role}]@${dc.label}`);
 		};
 		dc.onmessage = (e: MessageEvent) => {
-			console.log(
-				`DataChannel message from ${sdpIdRef.current}[${pairRole}]@${dc.label}: ${e.data}`
-			);
 			if (e.data instanceof ArrayBuffer) {
 				this.dispatchDataGotEvent({
 					dataChannel: dc,

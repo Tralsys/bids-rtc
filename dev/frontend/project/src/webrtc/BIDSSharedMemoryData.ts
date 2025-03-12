@@ -117,8 +117,16 @@ export const REVERSER_POS = {
 } as const;
 export type ReverserPos = (typeof REVERSER_POS)[keyof typeof REVERSER_POS];
 
+const IS_ENABLED_SIZE = 1;
+const VERSION_NUM_SIZE = 4;
+const IS_DOOR_CLOSED_SIZE = 1;
 export const BIDS_SHARED_MEMORY_DATA_BYTES =
-	4 + 4 + SPEC_DATA_BYTES + STATE_DATA_BYTES + HANDLE_DATA_BYTES + 4;
+	IS_ENABLED_SIZE +
+	VERSION_NUM_SIZE +
+	SPEC_DATA_BYTES +
+	STATE_DATA_BYTES +
+	HANDLE_DATA_BYTES +
+	IS_DOOR_CLOSED_SIZE;
 export type BIDSSharedMemoryData = {
 	IsEnabled: boolean;
 	VersionNum: number;
@@ -128,39 +136,39 @@ export type BIDSSharedMemoryData = {
 	IsDoorClosed: boolean;
 };
 
+const VERSION_NUM_OFFSET = IS_ENABLED_SIZE;
+const SPEC_DATA_OFFSET = VERSION_NUM_OFFSET + VERSION_NUM_SIZE;
+const STATE_DATA_OFFSET = SPEC_DATA_OFFSET + SPEC_DATA_BYTES;
+const HANDLE_DATA_OFFSET = STATE_DATA_OFFSET + STATE_DATA_BYTES;
+const DOOR_CLOSED_OFFSET = HANDLE_DATA_OFFSET + HANDLE_DATA_BYTES;
 export function serializeBIDSSharedMemoryData(
 	data: BIDSSharedMemoryData,
 	buf: DataView
 ) {
-	buf.setUint32(0, data.IsEnabled ? 1 : 0, true);
-	buf.setUint32(4, data.VersionNum, true);
+	buf.setUint8(0, data.IsEnabled ? 1 : 0);
+	buf.setUint32(VERSION_NUM_OFFSET, data.VersionNum, true);
 	serializeBIDSSharedMemoryDataSpec(
 		data.Spec,
-		new DataView(buf.buffer.slice(8, 8 + SPEC_DATA_BYTES))
+		new DataView(
+			buf.buffer.slice(SPEC_DATA_OFFSET, SPEC_DATA_OFFSET + SPEC_DATA_BYTES)
+		)
 	);
 	serializeBIDSSharedMemoryDataState(
 		data.State,
 		new DataView(
-			buf.buffer.slice(
-				8 + SPEC_DATA_BYTES,
-				8 + SPEC_DATA_BYTES + STATE_DATA_BYTES
-			)
+			buf.buffer.slice(STATE_DATA_OFFSET, STATE_DATA_OFFSET + STATE_DATA_BYTES)
 		)
 	);
 	serializeBIDSSharedMemoryDataHandle(
 		data.Handle,
 		new DataView(
 			buf.buffer.slice(
-				8 + SPEC_DATA_BYTES + STATE_DATA_BYTES,
-				8 + SPEC_DATA_BYTES + STATE_DATA_BYTES + HANDLE_DATA_BYTES
+				HANDLE_DATA_OFFSET,
+				HANDLE_DATA_OFFSET + HANDLE_DATA_BYTES
 			)
 		)
 	);
-	buf.setUint32(
-		4 + 4 + SPEC_DATA_BYTES + STATE_DATA_BYTES + HANDLE_DATA_BYTES,
-		data.IsDoorClosed ? 1 : 0,
-		true
-	);
+	buf.setUint8(DOOR_CLOSED_OFFSET, data.IsDoorClosed ? 1 : 0);
 }
 export function serializeBIDSSharedMemoryDataSpec(data: Spec, buf: DataView) {
 	buf.setUint32(0, data.BrakeNotchCount, true);
@@ -194,32 +202,30 @@ export function deserializeBIDSSharedMemoryData(
 	buf: DataView
 ): BIDSSharedMemoryData {
 	return {
-		IsEnabled: buf.getUint32(0, true) !== 0,
-		VersionNum: buf.getUint32(4, true),
+		IsEnabled: buf.getUint8(0) !== 0,
+		VersionNum: buf.getUint32(VERSION_NUM_OFFSET, true),
 		Spec: deserializeBIDSSharedMemoryDataSpec(
-			new DataView(buf.buffer.slice(8, 8 + SPEC_DATA_BYTES))
+			new DataView(
+				buf.buffer.slice(SPEC_DATA_OFFSET, SPEC_DATA_OFFSET + SPEC_DATA_BYTES)
+			)
 		),
 		State: deserializeBIDSSharedMemoryDataState(
 			new DataView(
 				buf.buffer.slice(
-					8 + SPEC_DATA_BYTES,
-					8 + SPEC_DATA_BYTES + STATE_DATA_BYTES
+					STATE_DATA_OFFSET,
+					STATE_DATA_OFFSET + STATE_DATA_BYTES
 				)
 			)
 		),
 		Handle: deserializeBIDSSharedMemoryDataHandle(
 			new DataView(
 				buf.buffer.slice(
-					8 + SPEC_DATA_BYTES + STATE_DATA_BYTES,
-					8 + SPEC_DATA_BYTES + STATE_DATA_BYTES + HANDLE_DATA_BYTES
+					HANDLE_DATA_OFFSET,
+					HANDLE_DATA_OFFSET + HANDLE_DATA_BYTES
 				)
 			)
 		),
-		IsDoorClosed:
-			buf.getUint32(
-				4 + 4 + SPEC_DATA_BYTES + STATE_DATA_BYTES + HANDLE_DATA_BYTES,
-				true
-			) !== 0,
+		IsDoorClosed: buf.getUint8(DOOR_CLOSED_OFFSET) !== 0,
 	};
 }
 export function deserializeBIDSSharedMemoryDataSpec(buf: DataView): Spec {

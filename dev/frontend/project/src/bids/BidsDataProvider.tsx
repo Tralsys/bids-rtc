@@ -52,7 +52,7 @@ export default memo<PropsWithChildren>(function BidsDataProvider({ children }) {
 		switch (header[3]) {
 			case HEADER_3_BSMD: {
 				const bsmd = deserializeBIDSSharedMemoryData(
-					new DataView(e.data, 4, e.data.byteLength - 4)
+					new DataView(e.data.slice(4))
 				);
 				valueRef.current.bsmd = bsmd;
 				valueRef.current._bsmdListenerList.forEach((listener) => {
