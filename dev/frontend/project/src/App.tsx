@@ -2,32 +2,18 @@ import { Box, Button, Divider, Stack, Typography } from "@mui/material";
 import ShowCurrentData from "./components/ShowCurrentData";
 import SignInUp from "./components/SignInUp";
 import { useUserId } from "./firebase/FirebaseHook";
-import { Role, ROLE } from "./webrtc/ConnectionManager";
 import { ComponentType, FC, useCallback, useState } from "react";
 import ClientManagement from "./components/ClientManagement";
-import { BIDSSharedMemoryDataFieldInfo } from "./webrtc/BIDSSharedMemoryDataFieldInfo";
-
-const query = new URLSearchParams(window.location.search);
-const role: Role = (() => {
-	const role = query.get("role");
-	if (Object.values(ROLE).includes(role as Role)) {
-		return role as Role;
-	} else {
-		return ROLE.SUBSCRIBER;
-	}
-})();
-console.log("Role: ", role);
+import { CLIENT_REGISTER_PARAMS } from "./constants";
 
 function App() {
-	const [currentPage, setCurrentPage] = useState<PageType | null>(null);
+	const [currentPage, setCurrentPage] = useState<PageType | null>(
+		CLIENT_REGISTER_PARAMS == null ? null : PAGE_TYPE["/clients"]
+	);
 	const userId = useUserId();
 	const onClickBack = useCallback(() => {
 		setCurrentPage(null);
 	}, []);
-	console.log(
-		"BIDS Shared Memory Data Field Info",
-		BIDSSharedMemoryDataFieldInfo
-	);
 	return (
 		<>
 			<h1>BIDS-WebRTC Demo App</h1>

@@ -9,3 +9,12 @@ export const APP_NAME_MAP = {
 	"019552c8-6759-738f-93aa-d3e652561e72": "Client Type: OpenBVE",
 	"019552c8-cb81-7254-a810-6a5d8c0abd39": "Client Type: TRAIN CREW",
 };
+
+const query = new URLSearchParams(window.location.search);
+export const CLIENT_REGISTER_PARAMS =
+	query.get("app_id") == null
+		? undefined
+		: {
+				appId: query.get("app_id")!,
+				redirect: query.get("redirect") ?? undefined,
+		  };

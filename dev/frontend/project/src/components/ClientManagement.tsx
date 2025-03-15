@@ -5,6 +5,7 @@ import {
 	IconButton,
 	LinearProgress,
 	Paper,
+	Stack,
 	Table,
 	TableBody,
 	TableCell,
@@ -18,7 +19,9 @@ import { memo, Suspense, use, useCallback, useEffect, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { applicationManagementApi, clientManagementApi } from "../api";
 import { useAbortOnUnmount } from "../hooks/AbortOnUnmount";
-import { MdDelete } from "react-icons/md";
+import { MdAdd, MdDelete } from "react-icons/md";
+import { CLIENT_REGISTER_PARAMS } from "../constants";
+import AddNewClientDialog from "./AddNewClientDialog";
 
 type ClientManagementProps = {
 	onClickBack: () => void;
@@ -29,6 +32,9 @@ export default memo<ClientManagementProps>(function ClientManagement({
 	const abortSignal = useAbortOnUnmount();
 	const [processingIdList, setProcessingIdList] = useState<number[]>([]);
 	const isProcessing = 0 < processingIdList.length;
+	const [isAddNewClientDialogOpen, setIsAddNewClientDialogOpen] = useState(
+		CLIENT_REGISTER_PARAMS != null
+	);
 	const [appNamePromiseMap, setAppNamePromiseMap] = useState<
 		Record<string, Promise<string>>
 	>({});
@@ -99,9 +105,20 @@ export default memo<ClientManagementProps>(function ClientManagement({
 		},
 		[onClickReload]
 	);
+	const onCloseAddNewClientDialog = useCallback(
+		(isSuccess?: boolean) => {
+			setIsAddNewClientDialogOpen(false);
+			if (isSuccess) {
+				onClickReload();
+			}
+		},
+		[onClickReload]
+	);
 
 	useEffect(() => {
-		setFetchClientInfoListPromise(fetchClientInfoList());
+		if (CLIENT_REGISTER_PARAMS == null) {
+			setFetchClientInfoListPromise(fetchClientInfoList());
+		}
 	}, [fetchClientInfoList]);
 
 	return (
@@ -116,16 +133,26 @@ export default memo<ClientManagementProps>(function ClientManagement({
 				<br />
 				使用しなくなったクライアントは適宜削除してください。
 			</Typography>
-			<Button
-				onClick={onClickReload}
-				disabled={isProcessing}
-				loading={isProcessing}
-				variant="outlined"
-				color="info"
-				sx={{ mt: 2 }}
-			>
-				再読み込み
-			</Button>
+			<Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+				<Button
+					onClick={onClickReload}
+					disabled={isProcessing}
+					loading={isProcessing}
+					variant="outlined"
+					color="info"
+				>
+					再読み込み
+				</Button>
+				<Button
+					onClick={() => setIsAddNewClientDialogOpen(true)}
+					disabled={isProcessing}
+					loading={isProcessing}
+					variant="contained"
+					startIcon={<MdAdd />}
+				>
+					追加
+				</Button>
+			</Stack>
 			<ErrorBoundary fallback={<Typography>エラーが発生しました。</Typography>}>
 				<Suspense fallback={<LinearProgress />}>
 					{fetchClientInfoListPromise && (
@@ -137,6 +164,10 @@ export default memo<ClientManagementProps>(function ClientManagement({
 					)}
 				</Suspense>
 			</ErrorBoundary>
+			<AddNewClientDialog
+				open={isAddNewClientDialogOpen}
+				onClose={onCloseAddNewClientDialog}
+			/>
 		</>
 	);
 });
