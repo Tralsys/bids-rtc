@@ -13,6 +13,7 @@ import { FormEvent, memo, useCallback, useMemo, useRef, useState } from "react";
 import { CLIENT_REGISTER_PARAMS } from "../constants";
 import { clientManagementApi } from "../api";
 import { MdContentCopy } from "react-icons/md";
+import { ResponseError } from "@tralsys/bids-rtc-signaling-api";
 
 type AddNewClientDialogProps = {
 	open: boolean;
@@ -39,8 +40,10 @@ const DialogContent = memo<Omit<AddNewClientDialogProps, "open">>(
 
 		const appIdErrorMessage = useMemo(() => {
 			if (appId === "") return "appIdを入力してください";
-			const regex = /\d{8}-\d{4}-\d{4}-\d{4}-\d{12}/;
-			if (!regex.test(appId)) return "appIdの形式が正しくありません";
+			const regex = /\w{8}-\w{4}-\w{4}-\w{4}-\w{12}/;
+			// \wはアンダースコアもマッチしてしまうため
+			if (!regex.test(appId) || appId.includes("_"))
+				return "appIdの形式が正しくありません";
 			return undefined;
 		}, [appId]);
 		const clientNameErrorMessage = useMemo(() => {
@@ -78,6 +81,13 @@ const DialogContent = memo<Omit<AddNewClientDialogProps, "open">>(
 						url.searchParams.set("token", token);
 						window.location.href = url.toString();
 					}
+				} catch (e) {
+					console.error("Failed to register client info", e);
+					const errorMessage =
+						e instanceof ResponseError
+							? (await e.response.json())?.message
+							: undefined;
+					alert(`クライアントの登録に失敗しました。${errorMessage ?? ""}`);
 				} finally {
 					isLoadingRef.current = false;
 					setIsLoading(false);
@@ -98,43 +108,43 @@ const DialogContent = memo<Omit<AddNewClientDialogProps, "open">>(
 		}, [token]);
 
 		return (
-			<Stack spacing={2} sx={{ p: 1 }}>
-				<Typography>新しいクライアントを追加</Typography>
-				<Collapse in={token != null}>
-					<FormControl
-						error={appIdErrorMessage != null}
-						disabled={
-							isLoading || isCompleted || CLIENT_REGISTER_PARAMS == null
-						}
-						fullWidth
-					>
-						<TextField
-							label="Application ID"
-							value={appId}
-							onChange={
-								CLIENT_REGISTER_PARAMS == null
-									? (e) => setAppId(e.target.value)
-									: undefined
-							}
-							helperText={appIdErrorMessage ?? ""}
-						/>
-					</FormControl>
-					<FormControl
-						error={clientNameErrorMessage != null}
-						disabled={isLoading || isCompleted}
-						fullWidth
-					>
-						<TextField
-							label="クライアント名"
-							value={clientName}
-							onChange={(e) => setClientName(e.target.value)}
-							helperText={clientNameErrorMessage ?? ""}
-						/>
-					</FormControl>
+			<Stack sx={{ p: 2 }}>
+				<Typography variant="h6" sx={{ mb: 1 }}>
+					新しいクライアントを追加
+				</Typography>
+				<Collapse in={token == null}>
+					<Stack spacing={2} useFlexGap>
+						<FormControl fullWidth>
+							<TextField
+								label="Application ID"
+								value={appId}
+								onChange={
+									CLIENT_REGISTER_PARAMS == null
+										? (e) => setAppId(e.target.value)
+										: undefined
+								}
+								disabled={
+									isLoading || isCompleted || CLIENT_REGISTER_PARAMS != null
+								}
+								error={appIdErrorMessage != null}
+								helperText={appIdErrorMessage ?? ""}
+							/>
+						</FormControl>
+						<FormControl fullWidth>
+							<TextField
+								label="クライアント名"
+								value={clientName}
+								onChange={(e) => setClientName(e.target.value)}
+								disabled={isLoading || isCompleted}
+								error={clientNameErrorMessage != null}
+								helperText={clientNameErrorMessage ?? ""}
+							/>
+						</FormControl>
+					</Stack>
 					<Stack
 						spacing={2}
 						direction="row"
-						sx={{ justifyContent: "flex-end" }}
+						sx={{ justifyContent: "flex-end", pt: 1 }}
 					>
 						<Button
 							type="button"
@@ -155,31 +165,35 @@ const DialogContent = memo<Omit<AddNewClientDialogProps, "open">>(
 					</Stack>
 				</Collapse>
 				<Collapse in={token != null}>
-					<Typography>
-						クライアントを追加しました。以下のトークンをクライアントにセットしてください。
-					</Typography>
-					<Typography color="error">
-						※トークンは一度しか表示されません。コピーを忘れないようにしてください。
-					</Typography>
-					<FormControl fullWidth>
-						<TextField
-							label="トークン"
-							disabled
-							value={token}
-							slotProps={{
-								input: {
-									endAdornment: (
-										<IconButton onClick={onClickCopyToken}>
-											<MdContentCopy />
-										</IconButton>
-									),
-								},
-							}}
-						/>
-					</FormControl>
-					<Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-						<Button onClick={() => onClose(true)}>閉じる</Button>
-					</Box>
+					<Stack spacing={1}>
+						<Typography>
+							クライアントを追加しました。以下のトークンをクライアントにセットしてください。
+						</Typography>
+						<Typography color="error">
+							※トークンは一度しか表示されません。コピーを忘れないようにしてください。
+						</Typography>
+						<FormControl fullWidth>
+							<TextField
+								label="トークン"
+								disabled
+								value={token ?? ""}
+								slotProps={{
+									input: {
+										endAdornment: (
+											<IconButton onClick={onClickCopyToken}>
+												<MdContentCopy />
+											</IconButton>
+										),
+									},
+								}}
+							/>
+						</FormControl>
+						<Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+							<Button onClick={() => onClose(true)} variant="outlined">
+								閉じる
+							</Button>
+						</Box>
+					</Stack>
 				</Collapse>
 			</Stack>
 		);
