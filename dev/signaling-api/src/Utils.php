@@ -91,12 +91,7 @@ final class Utils
 			return $clientId;
 		}
 
-		$headers = $request->getHeaders();
-		if (!$request->hasHeader('X-Client-Id')) {
-			return null;
-		}
-
-		$xClientIdArray = $headers['X-Client-Id'];
+		$xClientIdArray = $request->getHeader('X-Client-Id');
 		if ($xClientIdArray == NULL || count($xClientIdArray) !== 1) {
 			return null;
 		}
