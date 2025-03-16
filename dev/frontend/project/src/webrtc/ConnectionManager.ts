@@ -1,7 +1,7 @@
 import { SDPAnswerInfo, SDPOfferInfo } from "@tralsys/bids-rtc-signaling-api";
 import { sdpExchangeApi, xClientId } from "../api";
 
-const DATA_CHANNEL_LABEL = "bids-rtc-data-main";
+export const DATA_CHANNEL_LABEL = "bids-rtc-data-main";
 
 const SDP_ID_UNSET = "(unset)";
 

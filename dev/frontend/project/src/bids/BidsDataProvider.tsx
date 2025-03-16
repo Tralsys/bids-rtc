@@ -9,7 +9,11 @@ import {
 } from "react";
 import { useRTCConnectionManager } from "../components/WebRTCContext";
 import { BidsDataProviderContextType } from "./BidsDataProviderType";
-import { DataGotEventArgs } from "../webrtc/ConnectionManager";
+import {
+	DATA_CHANNEL_LABEL,
+	DataChannelStateChangedEventArgs,
+	DataGotEventArgs,
+} from "../webrtc/ConnectionManager";
 import { deserializeBIDSSharedMemoryData } from "../webrtc/BIDSSharedMemoryData";
 
 const Context = createContext<BidsDataProviderContextType | null>(null);
@@ -84,12 +88,50 @@ export default memo<PropsWithChildren>(function BidsDataProvider({ children }) {
 	}, []);
 
 	useEffect(() => {
+		const onOpen = (e: DataChannelStateChangedEventArgs) => {
+			startListeningBidsData(e.dataChannel);
+		};
 		rtc?.addDataGotEventListener(onDataGot);
+		rtc?.addDataChannelOpenEventListener(onOpen);
+		Object.values(rtc?._dataChannelMap ?? {}).forEach((dcMap) => {
+			const dc = dcMap[DATA_CHANNEL_LABEL];
+			if (dc?.readyState === "open") {
+				startListeningBidsData(dc);
+			}
+		});
 		return () => {
 			rtc?.removeDataGotEventListener(onDataGot);
+			rtc?.removeDataChannelOpenEventListener(onOpen);
+			Object.values(rtc?._dataChannelMap ?? {}).forEach((dcMap) => {
+				const dc = dcMap[DATA_CHANNEL_LABEL];
+				if (dc?.readyState === "open") {
+					endListeningBidsData(dc);
+				}
+			});
 		};
 	}, [onDataGot, rtc]);
 	return (
 		<Context.Provider value={valueRef.current}>{children}</Context.Provider>
 	);
 });
+
+function startListeningBidsData(dc: RTCDataChannel) {
+	console.log("startListeningBidsData", dc);
+	dc.send(getWSCmd("BEGIN_BSMD"));
+	dc.send(getWSCmd("BEGIN_PANEL"));
+	dc.send(getWSCmd("BEGIN_SOUND"));
+}
+
+function endListeningBidsData(dc: RTCDataChannel) {
+	console.log("endListeningBidsData", dc);
+	dc.send(getWSCmd("END_BSMD"));
+	dc.send(getWSCmd("END_PANEL"));
+	dc.send(getWSCmd("END_SOUND"));
+}
+
+function getWSCmd(cmd: string) {
+	return JSON.stringify({
+		id: Math.random().toString(36).slice(8),
+		cmd,
+	});
+}
