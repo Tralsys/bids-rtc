@@ -1,10 +1,22 @@
-import { Box, Button, Divider, Stack, Typography } from "@mui/material";
-import ShowCurrentData from "./components/ShowCurrentData";
-import SignInUp from "./components/SignInUp";
+import {
+	Box,
+	Button,
+	CircularProgress,
+	Divider,
+	Stack,
+	Typography,
+} from "@mui/material";
 import { useUserId } from "./firebase/FirebaseHook";
-import { ComponentType, FC, useCallback, useState } from "react";
-import ClientManagement from "./components/ClientManagement";
+import {
+	ComponentType,
+	FC,
+	lazy,
+	Suspense,
+	useCallback,
+	useState,
+} from "react";
 import { CLIENT_REGISTER_PARAMS } from "./constants";
+import ModalProgress from "./components/ModalProgress";
 
 function App() {
 	const [currentPage, setCurrentPage] = useState<PageType | null>(
@@ -21,7 +33,9 @@ function App() {
 				<Typography variant="body1">
 					あなたのUserID: {userId ?? "未ログイン"}
 				</Typography>
-				<SignInUp />
+				<Suspense fallback={<ModalProgress open={userId == null} />}>
+					<SignInUpLazy />
+				</Suspense>
 			</Stack>
 			<Divider />
 			<Box>
@@ -44,7 +58,23 @@ function App() {
 							))}
 						</Stack>
 					) : (
-						<Page type={currentPage} onClickBack={onClickBack} />
+						<Suspense
+							fallback={
+								<Box
+									sx={{
+										width: "100%",
+										flex: 1,
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+									}}
+								>
+									<CircularProgress size="4rem" />
+								</Box>
+							}
+						>
+							<Page type={currentPage} onClickBack={onClickBack} />
+						</Suspense>
 					))}
 			</Box>
 		</>
@@ -52,6 +82,8 @@ function App() {
 }
 
 export default App;
+
+const SignInUpLazy = lazy(() => import("./components/SignInUp"));
 
 type PageProps = {
 	type: PageType;
@@ -63,8 +95,8 @@ const Page: FC<PageProps> = ({ type, onClickBack }) => {
 };
 
 const PAGE_MAP = {
-	"/clients": ClientManagement,
-	"/webrtc": ShowCurrentData,
+	"/clients": lazy(() => import("./components/ClientManagement")),
+	"/webrtc": lazy(() => import("./components/ShowCurrentData")),
 } as const satisfies Record<string, ComponentType<{ onClickBack: () => void }>>;
 type PageType = keyof typeof PAGE_MAP;
 const PAGE_TYPE = {

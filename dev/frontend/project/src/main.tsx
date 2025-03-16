@@ -1,6 +1,5 @@
-import { StrictMode } from "react";
+import { lazy, StrictMode, Suspense } from "react";
 import { createRoot } from "react-dom/client";
-import App from "./App.tsx";
 import i18n, { changeLanguage } from "i18next";
 import I18nextBrowserLanguageDetector from "i18next-browser-languagedetector";
 import I18NextHttpBackend from "i18next-http-backend";
@@ -11,6 +10,7 @@ import type { I18N_LANGUAGE_TYPE } from "./i18n.ts";
 import { ThemeProvider } from "@emotion/react";
 import theme from "./theme.ts";
 import { CssBaseline } from "@mui/material";
+import ModalProgress from "./components/ModalProgress.tsx";
 
 const rootNode = document.getElementById("root");
 if (rootNode == null) {
@@ -57,11 +57,15 @@ i18n
 		}
 	});
 
+const AppLazy = lazy(() => import("./App.tsx"));
+
 createRoot(rootNode).render(
 	<StrictMode>
 		<ThemeProvider theme={theme}>
 			<CssBaseline />
-			<App />
+			<Suspense fallback={<ModalProgress />}>
+				<AppLazy />
+			</Suspense>
 		</ThemeProvider>
 	</StrictMode>
 );
