@@ -97,7 +97,7 @@ final class Utils
 		}
 
 		$xClientIdArray = $headers['X-Client-Id'];
-		if (count($xClientIdArray) !== 1) {
+		if ($xClientIdArray == NULL || count($xClientIdArray) !== 1) {
 			return null;
 		}
 		$xClientId = $xClientIdArray[0];
