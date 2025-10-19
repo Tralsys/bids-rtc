@@ -2,10 +2,10 @@ import { auth } from "../firebase/firebase";
 import { IS_LOCAL_DEBUG, IS_DOCKER_DEBUG } from "../constants";
 
 const BASE_PATH = IS_LOCAL_DEBUG
-	? "http://localhost:8080/signaling"
+	? "http://localhost:8080/api"
 	: IS_DOCKER_DEBUG
-	? `${window.location.origin}/signaling`
-	: "/signaling";
+	? `${window.location.origin}/api`
+	: "/api";
 
 export interface LogFile {
 	name: string;

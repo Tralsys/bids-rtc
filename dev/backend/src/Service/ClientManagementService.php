@@ -1,0 +1,184 @@
+<?php
+
+declare(strict_types=1);
+
+namespace BidsRtc\Backend\Service;
+
+use BidsRtc\Backend\Model\ClientInfo;
+use BidsRtc\Backend\Model\ClientInfoWithToken;
+use BidsRtc\Backend\Repository\ClientTableRepository;
+use BidsRtc\Backend\RetValueOrError;
+use BidsRtc\Backend\Utils;
+use PDO;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Log\LoggerInterface;
+use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
+
+/**
+ * クライアント管理サービス
+ */
+class ClientManagementService
+{
+  private const int LIST_LIMIT = 100;
+  private const int MAX_CLIENT_COUNT_PER_USER = 10;
+
+  private readonly ClientTableRepository $repo;
+  private string $rawUserId = '';
+  private string $hashedUserId = '';
+
+  public function __construct(
+    private readonly PDO $db,
+    private readonly LoggerInterface $logger,
+    // 認証関連は後で実装
+    // private readonly AuthUtil $authUtil,
+  ) {
+    $this->repo = new ClientTableRepository($this->db, $this->logger);
+  }
+
+  /**
+   * リクエストからユーザーIDを設定
+   * 認証ミドルウェアで設定された属性から取得
+   */
+  public function setUserId(
+    ServerRequestInterface $request,
+    ResponseInterface $response,
+  ): ?ResponseInterface {
+    // 認証ミドルウェアから設定される想定
+    $userId = $request->getAttribute('uid');
+
+    if ($userId === null) {
+      return Utils::withUnauthorizedError($response);
+    }
+
+    $this->setUserIdInternal($userId);
+    return null;
+  }
+
+  /**
+   * 内部用: ユーザーIDを設定
+   */
+  private function setUserIdInternal(string $userId): void
+  {
+    $this->rawUserId = $userId;
+    $this->hashedUserId = Utils::getHashedUserId($userId);
+  }
+
+  /**
+   * クライアント情報を削除
+   */
+  public function deleteClientInfo(UuidInterface $clientId): bool
+  {
+    try {
+      $result = $this->repo->delete($this->hashedUserId, $clientId);
+      return $result === 1;
+    } catch (\PDOException $e) {
+      throw new RetValueOrError(500, "Database error: " . $e->getMessage());
+    }
+  }
+
+  /**
+   * クライアントアクセストークンを取得
+   * （簡易実装 - 本格的な実装は認証ユーティリティが必要）
+   */
+  public function getClientAccessToken(string $unverifiedRawRefreshToken): string
+  {
+    // TODO: 本格的なトークン検証と発行を実装
+    // 現在は簡易実装
+    throw new RetValueOrError(501, "Token generation not implemented yet");
+  }
+
+  /**
+   * クライアント情報を取得
+   */
+  public function getClientInfo(UuidInterface $clientId): ClientInfo
+  {
+    try {
+      $clientInfo = $this->repo->selectOne($this->hashedUserId, $clientId);
+
+      if ($clientInfo === null) {
+        throw new RetValueOrError(404, "Not Found: $clientId");
+      }
+
+      return $clientInfo->toApiClientInfo();
+    } catch (\PDOException $e) {
+      throw new RetValueOrError(500, "Database error: " . $e->getMessage());
+    }
+  }
+
+  /**
+   * クライアント情報をリストで返す
+   *
+   * @return ClientInfo[]
+   */
+  public function getClientInfoList(): array
+  {
+    try {
+      $clientInfoList = $this->repo->selectAll($this->hashedUserId, 0, self::LIST_LIMIT);
+
+      return array_map(
+        fn($clientInfo) => $clientInfo->toApiClientInfo(),
+        $clientInfoList,
+      );
+    } catch (\PDOException $e) {
+      throw new RetValueOrError(500, "Database error: " . $e->getMessage());
+    }
+  }
+
+  /**
+   * 新しいクライアントを登録
+   */
+  public function registerClientInfo(
+    UuidInterface $appId,
+    string $name,
+  ): ClientInfoWithToken {
+    try {
+      // クライアント数の上限チェック
+      $clientCount = $this->repo->count($this->hashedUserId);
+      if ($clientCount >= self::MAX_CLIENT_COUNT_PER_USER) {
+        throw new RetValueOrError(400, 'Client count limit exceeded');
+      }
+
+      $clientId = Uuid::uuid7();
+
+      // リフレッシュトークンの生成（簡易実装）
+      $refreshToken = bin2hex(random_bytes(32));
+      $refreshTokenHash = password_hash($refreshToken, PASSWORD_DEFAULT);
+
+      $this->db->beginTransaction();
+
+      $insertResult = $this->repo->createNewClient(
+        $this->hashedUserId,
+        $clientId,
+        $appId,
+        $name,
+        $refreshTokenHash,
+      );
+
+      if ($insertResult === 0) {
+        throw new RetValueOrError(500, "Database error: insert failed");
+      }
+
+      $clientInfo = $this->repo->selectOne($this->hashedUserId, $clientId);
+
+      if ($clientInfo === null) {
+        throw new RetValueOrError(500, "Database error: selectOne failed");
+      }
+
+      $this->db->commit();
+
+      return $clientInfo->toApiClientInfoWithToken($refreshToken);
+    } catch (\PDOException $e) {
+      if ($this->db->inTransaction()) {
+        $this->db->rollBack();
+      }
+      throw new RetValueOrError(500, "Database error: " . $e->getMessage());
+    } catch (RetValueOrError $e) {
+      if ($this->db->inTransaction()) {
+        $this->db->rollBack();
+      }
+      throw $e;
+    }
+  }
+}

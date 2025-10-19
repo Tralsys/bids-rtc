@@ -6,7 +6,7 @@ services:
       - "80:80"
     networks:
       - proxy-front
-      - proxy-signaling
+      - proxy-backend
     volumes:
       - type: bind
         read_only: true
@@ -17,7 +17,7 @@ services:
         target: /var/log/nginx
     depends_on:
       - front
-      - signaling
+      - backend
   front:
     build:
       context: ./dev/frontend
@@ -25,24 +25,32 @@ services:
     hostname: front
     networks:
       - proxy-front
-  signaling:
+  backend:
     build:
-      context: ./dev/signaling-api
+      context: ./dev/backend
       dockerfile: Dockerfile
-    hostname: signaling
+    hostname: backend
     networks:
-      - signaling-db
-      - proxy-signaling
+      - backend-db
+      - proxy-backend
     ports:
       - "8080:80"
     volumes:
       - type: bind
         read_only: true
-        source: ./dev/signaling-api/src
+        source: ./dev/backend/public
+        target: /var/www/html/public
+      - type: bind
+        read_only: true
+        source: ./dev/backend/config
+        target: /var/www/html/config
+      - type: bind
+        read_only: true
+        source: ./dev/backend/src
         target: /var/www/html/src
       - type: bind
-        source: ./dev/signaling-api/logs
-        target: /var/log/apache2
+        source: ./dev/backend/logs
+        target: /var/www/html/logs
     depends_on:
       - mysql
   firebase:
@@ -61,7 +69,7 @@ services:
     image: mysql:8.0-oracle
     hostname: mysql
     networks:
-      - signaling-db
+      - backend-db
       - phpmyadmin-db
     volumes:
       - type: bind
@@ -96,6 +104,6 @@ volumes:
   db:
 networks:
   proxy-front:
-  proxy-signaling:
-  signaling-db:
+  proxy-backend:
+  backend-db:
   phpmyadmin-db:

@@ -33,9 +33,9 @@ export const xClientId = (() => {
 
 const apiConfig = new Configuration({
 	basePath: IS_LOCAL_DEBUG
-		? "http://localhost:8080/signaling"
+		? "http://localhost:8080/api"
 		: IS_DOCKER_DEBUG
-		? `${window.location.origin}/signaling`
+		? `${window.location.origin}/api`
 		: undefined,
 	accessToken: async () => {
 		return (await auth.currentUser?.getIdToken()) ?? "";
