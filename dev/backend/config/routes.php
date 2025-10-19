@@ -41,9 +41,9 @@ $app->get('/', function (Request $request, Response $response) use ($container) 
 });
 
 // アプリケーション管理
-$app->group('/apps', function () use ($container) {
+$app->group('/apps', function ($group) use ($container) {
 	// アプリケーション作成
-	$this->post('', function (Request $request, Response $response) use ($container) {
+	$group->post('', function (Request $request, Response $response) use ($container) {
 		$controller = new Controller\ApplicationManagementController(
 			service: $container->get(\BidsRtc\Backend\Service\AppManagementService::class),
 			logger: $container->get(\Psr\Log\LoggerInterface::class),
@@ -52,7 +52,7 @@ $app->group('/apps', function () use ($container) {
 	});
 
 	// アプリケーション情報取得
-	$this->get('/{appId}', function (Request $request, Response $response, array $args) use ($container) {
+	$group->get('/{appId}', function (Request $request, Response $response, array $args) use ($container) {
 		$controller = new Controller\ApplicationManagementController(
 			service: $container->get(\BidsRtc\Backend\Service\AppManagementService::class),
 			logger: $container->get(\Psr\Log\LoggerInterface::class),
@@ -62,9 +62,9 @@ $app->group('/apps', function () use ($container) {
 });
 
 // クライアント管理
-$app->group('/client', function () use ($container) {
+$app->group('/client', function ($group) use ($container) {
 	// クライアントアクセストークン取得
-	$this->put('_token', function (Request $request, Response $response) use ($container) {
+	$group->put('_token', function (Request $request, Response $response) use ($container) {
 		$controller = new Controller\ClientManagementController(
 			service: $container->get(\BidsRtc\Backend\Service\ClientManagementService::class),
 			logger: $container->get(\Psr\Log\LoggerInterface::class),
@@ -73,9 +73,9 @@ $app->group('/client', function () use ($container) {
 	});
 });
 
-$app->group('/clients', function () use ($container) {
+$app->group('/clients', function ($group) use ($container) {
 	// クライアント一覧取得
-	$this->get('', function (Request $request, Response $response) use ($container) {
+	$group->get('', function (Request $request, Response $response) use ($container) {
 		$controller = new Controller\ClientManagementController(
 			service: $container->get(\BidsRtc\Backend\Service\ClientManagementService::class),
 			logger: $container->get(\Psr\Log\LoggerInterface::class),
@@ -84,7 +84,7 @@ $app->group('/clients', function () use ($container) {
 	});
 
 	// クライアント登録
-	$this->post('', function (Request $request, Response $response) use ($container) {
+	$group->post('', function (Request $request, Response $response) use ($container) {
 		$controller = new Controller\ClientManagementController(
 			service: $container->get(\BidsRtc\Backend\Service\ClientManagementService::class),
 			logger: $container->get(\Psr\Log\LoggerInterface::class),
@@ -93,7 +93,7 @@ $app->group('/clients', function () use ($container) {
 	});
 
 	// クライアント情報取得
-	$this->get('/{clientId}', function (Request $request, Response $response, array $args) use ($container) {
+	$group->get('/{clientId}', function (Request $request, Response $response, array $args) use ($container) {
 		$controller = new Controller\ClientManagementController(
 			service: $container->get(\BidsRtc\Backend\Service\ClientManagementService::class),
 			logger: $container->get(\Psr\Log\LoggerInterface::class),
@@ -102,7 +102,7 @@ $app->group('/clients', function () use ($container) {
 	});
 
 	// クライアント削除
-	$this->delete('/{clientId}', function (Request $request, Response $response, array $args) use ($container) {
+	$group->delete('/{clientId}', function (Request $request, Response $response, array $args) use ($container) {
 		$controller = new Controller\ClientManagementController(
 			service: $container->get(\BidsRtc\Backend\Service\ClientManagementService::class),
 			logger: $container->get(\Psr\Log\LoggerInterface::class),
@@ -141,9 +141,9 @@ $app->delete('/exchange/{sdpId}', function (Request $request, Response $response
 });
 
 // 管理者API
-$app->group('/admin', function () use ($container) {
+$app->group('/admin', function ($group) use ($container) {
 	// ログファイル一覧取得
-	$this->get('/logs', function (Request $request, Response $response) use ($container) {
+	$group->get('/logs', function (Request $request, Response $response) use ($container) {
 		$controller = new Controller\AdminController(
 			logger: $container->get(\Psr\Log\LoggerInterface::class),
 			config: [
@@ -154,7 +154,7 @@ $app->group('/admin', function () use ($container) {
 	});
 
 	// ログファイル内容取得
-	$this->get('/logs/{filename}', function (Request $request, Response $response, array $args) use ($container) {
+	$group->get('/logs/{filename}', function (Request $request, Response $response, array $args) use ($container) {
 		$controller = new Controller\AdminController(
 			logger: $container->get(\Psr\Log\LoggerInterface::class),
 			config: [
