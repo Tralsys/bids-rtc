@@ -87,25 +87,36 @@ $errorMiddleware->setDefaultErrorHandler(function ($request, $exception, $displa
 	} elseif ($allowedOrigins === '*' || $allowedOrigins === $origin) {
 		$allowOrigin = $allowedOrigins;
 	}
-	$response = new \Slim\Psr7\Response();
-	$response = $response
+	
+	$logger = $container->get(\Psr\Log\LoggerInterface::class);
+	$logger->error($exception->getMessage(), ['exception' => $exception]);
+	
+	$statusCode = $exception->getCode() ?: 500;
+	if ($statusCode < 400 || $statusCode >= 600) {
+		$statusCode = 500;
+	}
+	
+	$payload = ['error' => $exception->getMessage()];
+	if ($displayErrorDetails) {
+		$payload['trace'] = $exception->getTraceAsString();
+	}
+	
+	$response = new \Slim\Psr7\Response($statusCode);
+	$response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+	return $response
+		->withHeader('Content-Type', 'application/json')
 		->withHeader('Access-Control-Allow-Origin', $allowOrigin)
 		->withHeader('Access-Control-Allow-Methods', implode(', ', $settings['Access-Control-Allow-Methods'] ?? ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']))
 		->withHeader('Access-Control-Allow-Headers', implode(', ', $settings['Access-Control-Allow-Headers'] ?? ['Content-Type', 'Authorization']))
 		->withHeader('Access-Control-Allow-Credentials', (string) ($settings['Access-Control-Allow-Credentials'] ?? 'true'))
 		->withHeader('Access-Control-Max-Age', (string) ($settings['Access-Control-Max-Age'] ?? '3600'));
-	if (strtoupper($request->getMethod()) === 'OPTIONS') {
-		return $response->withStatus(204);
-	}
-	// Default: 500 error
-	return $response->withStatus(500);
 });
 
 // Custom NotFound and NotAllowed handlers for CORS
 $app->setBasePath("");
 
-// 認証ミドルウェア（必要に応じて）
-// $app->add(\BidsRtc\Backend\Middleware\AuthMiddleware::class);
+// 認証ミドルウェア
+$app->add(\BidsRtc\Backend\Middleware\AuthMiddleware::class);
 
 // ルートの登録
 require __DIR__ . '/../config/routes.php';

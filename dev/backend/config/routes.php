@@ -154,13 +154,15 @@ $app->group('/admin', function ($group) use ($container) {
 	});
 
 	// ログファイル内容取得
-	$group->get('/logs/{filename}', function (Request $request, Response $response, array $args) use ($container) {
+	$group->get('/logs/{filename}', function (Request $request, Response $response) use ($container) {
 		$controller = new Controller\AdminController(
 			logger: $container->get(\Psr\Log\LoggerInterface::class),
 			config: [
 				'admin.logs_dir' => $container->get('admin.logs_dir'),
 			],
 		);
-		return $controller->getLogContent($request, $response, $args);
+		// Get filename from route arguments
+		$filename = $request->getAttribute('filename');
+		return $controller->getLogContent($request, $response, ['filename' => $filename]);
 	});
 });

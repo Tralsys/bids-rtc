@@ -49,16 +49,36 @@ return [
 
   // Firebase Factory
   Kreait\Firebase\Factory::class => DI\factory(function (ContainerInterface $c) {
-    return (new Kreait\Firebase\Factory())
+    $factory = (new Kreait\Firebase\Factory())
       ->withAuthTokenCache(new Symfony\Component\Cache\Adapter\FilesystemAdapter(
         directory: $c->get('firebase.api_token_cache_dir'),
       ))
       ->withVerifierCache(new Symfony\Component\Cache\Adapter\FilesystemAdapter(
         directory: $c->get('firebase.auth.pubkey_cache_dir'),
       ))
-      ->withProjectId($c->get('firebase.project_id'))
-      ->withServiceAccount($c->get('firebase.sa_file'))
-      ->withHttpLogger($c->get(Psr\Log\LoggerInterface::class));
+      ->withProjectId($c->get('firebase.project_id'));
+
+    // Use service account if file exists, otherwise use emulator mode
+    $saFile = $c->get('firebase.sa_file');
+    if ($saFile && file_exists($saFile)) {
+      $factory = $factory->withServiceAccount($saFile);
+    } elseif (getenv('FIREBASE_AUTH_EMULATOR_HOST')) {
+      // For Firebase emulator, create a minimal fake service account
+      $fakeServiceAccount = [
+        'type' => 'service_account',
+        'project_id' => $c->get('firebase.project_id') ?: 'demo-project',
+        'private_key_id' => 'fake_key_id',
+        'private_key' => '-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC6U9z3sE2D0JD4\nFake==\n-----END PRIVATE KEY-----\n',
+        'client_email' => 'fake@demo-project.iam.gserviceaccount.com',
+        'client_id' => '123456789',
+        'auth_uri' => 'https://accounts.google.com/o/oauth2/auth',
+        'token_uri' => 'https://oauth2.googleapis.com/token',
+        'auth_provider_x509_cert_url' => 'https://www.googleapis.com/oauth2/v1/certs',
+      ];
+      $factory = $factory->withServiceAccount($fakeServiceAccount);
+    }
+
+    return $factory->withHttpLogger($c->get(Psr\Log\LoggerInterface::class));
   }),
 
   // Firebase Auth
@@ -83,6 +103,9 @@ return [
   }),
 
   Neomerx\Cors\Contracts\AnalyzerInterface::class => DI\factory([Neomerx\Cors\Analyzer::class, 'instance']),
+
+  // Middleware
+  \BidsRtc\Backend\Middleware\AuthMiddleware::class => DI\autowire(),
 
   // Services
   \BidsRtc\Backend\Service\AppManagementService::class => DI\autowire(),

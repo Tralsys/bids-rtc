@@ -32,9 +32,12 @@ services:
     hostname: backend
     networks:
       - backend-db
+      - backend-firebase
       - proxy-backend
     ports:
       - "8080:80"
+    environment:
+      - FIREBASE_AUTH_EMULATOR_HOST=firebase:9099
     volumes:
       - type: bind
         read_only: true
@@ -58,6 +61,8 @@ services:
       context: ./dev/firebase
       dockerfile: Dockerfile
     hostname: firebase
+    networks:
+      - backend-firebase
     ports:
       - "9099:9099"
       - "4000:4000"
@@ -106,4 +111,5 @@ networks:
   proxy-front:
   proxy-backend:
   backend-db:
+  backend-firebase:
   phpmyadmin-db:
