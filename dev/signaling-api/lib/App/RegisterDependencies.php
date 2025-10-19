@@ -153,6 +153,12 @@ final class RegisterDependencies
 				\DI\env('APP_IS_DOCKER', 'false'),
 			),
 
+			// Admin API
+			\dev_t0r\bids_rtc\signaling\api\AdminApi::class => \DI\factory(function (\Psr\Log\LoggerInterface $logger, string $adminLogsDir) {
+				return new \dev_t0r\bids_rtc\signaling\api\AdminApi($logger, ['admin.logs_dir' => $adminLogsDir]);
+			})
+				->parameter('adminLogsDir', \DI\get('admin.logs_dir')),
+
 		]);
 	}
 }

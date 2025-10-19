@@ -77,6 +77,9 @@ return [
 	'logger.level' => 300, // equals WARNING level
 	'logger.options' => [],
 
+	// admin api settings
+	'admin.logs_dir' => \realpath(__DIR__ . '/../../logs'),
+
 	// App Settings
 	'app.name' => 'bids-rtc',
 	'app.version' => '1.0.0',

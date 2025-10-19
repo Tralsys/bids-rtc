@@ -13,4 +13,7 @@ return [
 	'logger.path' => '/var/log/apache2/slim-app',
 	'logger.level' => \Monolog\Logger::DEBUG,
 	'logger.options' => [],
+
+	// admin api settings
+	'admin.logs_dir' => '/var/log/apache2',
 ];

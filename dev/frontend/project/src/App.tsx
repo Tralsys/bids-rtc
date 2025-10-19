@@ -6,7 +6,7 @@ import {
 	Stack,
 	Typography,
 } from "@mui/material";
-import { useUserId } from "./firebase/FirebaseHook";
+import { useUserId, useIsAdmin } from "./firebase/FirebaseHook";
 import {
 	ComponentType,
 	FC,
@@ -18,11 +18,14 @@ import {
 import { CLIENT_REGISTER_PARAMS } from "./constants";
 import ModalProgress from "./components/ModalProgress";
 
+const ADMIN_PAGE_PREFIX = "/admin";
+
 function App() {
 	const [currentPage, setCurrentPage] = useState<PageType | null>(
 		CLIENT_REGISTER_PARAMS == null ? null : PAGE_TYPE["/clients"]
 	);
 	const userId = useUserId();
+	const isAdmin = useIsAdmin();
 	const onClickBack = useCallback(() => {
 		setCurrentPage(null);
 	}, []);
@@ -32,6 +35,7 @@ function App() {
 			<Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
 				<Typography variant="body1">
 					あなたのUserID: {userId ?? "未ログイン"}
+					{isAdmin && " (管理者)"}
 				</Typography>
 				<Suspense fallback={<ModalProgress open={userId == null} />}>
 					<SignInUpLazy />
@@ -47,15 +51,22 @@ function App() {
 							alignItems="center"
 							sx={{ my: 2 }}
 						>
-							{Object.keys(PAGE_TYPE).map((key) => (
-								<Button
-									key={key}
-									variant="outlined"
-									onClick={() => setCurrentPage(key as PageType)}
-								>
-									{key}
-								</Button>
-							))}
+							{Object.keys(PAGE_TYPE)
+								.filter((key) => {
+									if (key.startsWith(ADMIN_PAGE_PREFIX + "/")) {
+										return isAdmin;
+									}
+									return true;
+								})
+								.map((key) => (
+									<Button
+										key={key}
+										variant="outlined"
+										onClick={() => setCurrentPage(key as PageType)}
+									>
+										{key}
+									</Button>
+								))}
 						</Stack>
 					) : (
 						<Suspense
@@ -97,9 +108,11 @@ const Page: FC<PageProps> = ({ type, onClickBack }) => {
 const PAGE_MAP = {
 	"/clients": lazy(() => import("./components/ClientManagement")),
 	"/webrtc": lazy(() => import("./components/ShowCurrentData")),
+	"/admin/logs": lazy(() => import("./components/LogViewer")),
 } as const satisfies Record<string, ComponentType<{ onClickBack: () => void }>>;
 type PageType = keyof typeof PAGE_MAP;
 const PAGE_TYPE = {
 	"/clients": "/clients",
 	"/webrtc": "/webrtc",
+	"/admin/logs": "/admin/logs",
 } as const satisfies Record<string, PageType>;

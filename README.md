@@ -1,17 +1,18 @@
 # bids-rtc
+
 BIDS WebRTC Backend
 
 ## プロジェクト構成
 
-このプロジェクトは、WebRTCシグナリングサーバーとフロントエンドアプリケーションで構成されています。
+このプロジェクトは、WebRTC シグナリングサーバーとフロントエンドアプリケーションで構成されています。
 
 ### ディレクトリ構造
 
-- `dev/signaling-api/` - バックエンドAPI
-  - PHPベースのSignaling API + 管理者用API
+- `dev/signaling-api/` - バックエンド API
+  - PHP ベースの Signaling API + 管理者用 API
   - `/admin/logs` - 管理者用ログ取得エンドポイント
 - `dev/frontend/` - フロントエンドアプリケーション
-- `spec/` - OpenAPI仕様
+- `spec/` - OpenAPI 仕様
 
 ## 起動方法
 
@@ -20,8 +21,9 @@ docker-compose up -d
 ```
 
 サービスへのアクセス:
+
 - フロントエンド: http://localhost
-- バックエンドAPI: http://localhost:8080/signaling
+- バックエンド API: http://localhost:8080/signaling
 - phpMyAdmin: http://localhost:8081
 - Firebase Emulator: http://localhost:4000
 
@@ -33,11 +35,11 @@ docker-compose up -d
 
 1. **ログビューア** (`/admin/logs`)
    - サーバーログファイルの一覧表示
-   - ログ内容の閲覧（最新N行を取得可能）
+   - ログ内容の閲覧（最新 N 行を取得可能）
    - 対応ログファイル：
      - `app.log`, `slim-app.log` - アプリケーションログ
-     - `access.log`, `error.log` - Apacheログ
-     - `php-error.log` - PHPエラーログ
+     - `access.log`, `error.log` - Apache ログ
+     - `php-error.log` - PHP エラーログ
      - 日付付きログファイル（例: `app.2025-02-16.log`）
 
 ### 権限管理
@@ -46,16 +48,16 @@ docker-compose up -d
 - フロントエンド: `useIsAdmin()` フックで管理者判定
 - 管理者ロールは Firebase Auth の Custom Claims で `role: "admin"` を設定
 
-## API開発フロー
+## API 開発フロー
 
-### PHPコードからOpenAPI仕様を生成
+### PHP コードから OpenAPI 仕様を生成
 
 ```bash
 cd dev/signaling-api
 php generate-openapi-spec.php
 ```
 
-生成されたJSON仕様は `spec/signaling-api/openapi.generated.json` に保存されます。
+生成された JSON 仕様は `spec/signaling-api/openapi.generated.json` に保存されます。
 
 ## 開発
 

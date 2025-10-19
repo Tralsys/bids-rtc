@@ -581,6 +581,92 @@ class RegisterRoutes
                 ],
             ],
         ],
+        [
+            'httpMethod' => 'GET',
+            'basePathWithoutHost' => '/signaling',
+            'path' => '/admin/logs',
+            'apiPackage' => 'dev_t0r\bids_rtc\signaling\api',
+            'classname' => 'AdminApi',
+            'userClassname' => 'AdminApi',
+            'operationId' => 'getLogsList',
+            'responses' => [
+                '200' => [
+                    'jsonSchema' => '{
+  "description" : "ログファイル一覧",
+  "content" : {
+    "application/json" : {
+      "schema" : {
+        "type" : "object",
+        "properties" : {
+          "logs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "object",
+              "properties" : {
+                "name" : {"type" : "string"},
+                "size" : {"type" : "integer"},
+                "modified" : {"type" : "string"}
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}',
+                ],
+            ],
+            'authMethods' => [
+                [
+                    'type' => 'http',
+                    'scheme' => 'bearer',
+                    'bearerFormat' => 'JWT',
+                    'isBasic' => false,
+                    'isBearer' => true,
+                    'isApiKey' => false,
+                    'isOAuth' => false,
+                ],
+            ],
+        ],
+        [
+            'httpMethod' => 'GET',
+            'basePathWithoutHost' => '/signaling',
+            'path' => '/admin/logs/{filename}',
+            'apiPackage' => 'dev_t0r\bids_rtc\signaling\api',
+            'classname' => 'AdminApi',
+            'userClassname' => 'AdminApi',
+            'operationId' => 'getLogContent',
+            'responses' => [
+                '200' => [
+                    'jsonSchema' => '{
+  "description" : "ログファイル内容",
+  "content" : {
+    "application/json" : {
+      "schema" : {
+        "type" : "object",
+        "properties" : {
+          "filename" : {"type" : "string"},
+          "content" : {"type" : "string"},
+          "lines" : {"type" : "integer"}
+        }
+      }
+    }
+  }
+}',
+                ],
+            ],
+            'authMethods' => [
+                [
+                    'type' => 'http',
+                    'scheme' => 'bearer',
+                    'bearerFormat' => 'JWT',
+                    'isBasic' => false,
+                    'isBearer' => true,
+                    'isApiKey' => false,
+                    'isOAuth' => false,
+                ],
+            ],
+        ],
     ];
 
     /**
