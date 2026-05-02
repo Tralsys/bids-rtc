@@ -87,20 +87,20 @@ $errorMiddleware->setDefaultErrorHandler(function ($request, $exception, $displa
 	} elseif ($allowedOrigins === '*' || $allowedOrigins === $origin) {
 		$allowOrigin = $allowedOrigins;
 	}
-	
+
 	$logger = $container->get(\Psr\Log\LoggerInterface::class);
 	$logger->error($exception->getMessage(), ['exception' => $exception]);
-	
+
 	$statusCode = $exception->getCode() ?: 500;
 	if ($statusCode < 400 || $statusCode >= 600) {
 		$statusCode = 500;
 	}
-	
+
 	$payload = ['error' => $exception->getMessage()];
 	if ($displayErrorDetails) {
 		$payload['trace'] = $exception->getTraceAsString();
 	}
-	
+
 	$response = new \Slim\Psr7\Response($statusCode);
 	$response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
 	return $response
