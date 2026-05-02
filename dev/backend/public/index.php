@@ -116,9 +116,6 @@ $errorMiddleware->setDefaultErrorHandler(function ($request, $exception, $displa
 // Custom NotFound and NotAllowed handlers for CORS
 $app->setBasePath("");
 
-// 認証ミドルウェア
-$app->add(\BidsRtc\Backend\Middleware\AuthMiddleware::class);
-
 // ルートの登録
 require __DIR__ . '/../config/routes.php';
 

@@ -221,7 +221,7 @@ class SdpTableRepository
       SET
         `sdp1`.`answer_client_id` = :answer_client_id
       WHERE
-        `sdp1`.`user_id` = :hashed_user_id
+        `sdp1`.`user_id` = :hashed_user_id2
         AND `recent_answers`.`offer_client_id` IS NULL
         AND `sdp1`.`role` = :target_role
         AND `sdp1`.`answer_client_id` IS NULL
@@ -242,6 +242,7 @@ class SdpTableRepository
 
       $query->bindValue(':answer_client_id', $answerClientId->getBytes(), PDO::PARAM_STR);
       $query->bindValue(':hashed_user_id', $hashedUserId, PDO::PARAM_STR);
+      $query->bindValue(':hashed_user_id2', $hashedUserId, PDO::PARAM_STR);
       $query->bindValue(':target_role', $targetRole, PDO::PARAM_STR);
       $query->bindValue(':recent_cutoff', $recentCutoff, PDO::PARAM_STR);
       $query->bindValue(':offer_cutoff', $offerCutoff, PDO::PARAM_STR);

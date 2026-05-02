@@ -150,7 +150,7 @@ class ApplicationManagementController
 			}
 
 			$appInfo = $this->service->createApp($name, $description, $owner);
-			return Utils::withJson($response, $appInfo);
+			return Utils::withJson($response, $appInfo, 201);
 		} catch (RetValueOrError $e) {
 			return $e->getResponseWithJson($response);
 		} catch (\Exception $e) {

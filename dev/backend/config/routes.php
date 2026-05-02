@@ -61,12 +61,12 @@ $app->group('/apps', function ($group) use ($container) {
 	});
 
 	// アプリケーション情報取得
-	$group->get('/{appId}', function (Request $request, Response $response, array $args) use ($container) {
+	$group->get('/{appId}', function (Request $request, Response $response, string $appId) use ($container) {
 		$controller = new Controller\ApplicationManagementController(
 			service: $container->get(\BidsRtc\Backend\Service\AppManagementService::class),
 			logger: $container->get(\Psr\Log\LoggerInterface::class),
 		);
-		return $controller->getApplicationInfo($request, $response, $args);
+		return $controller->getApplicationInfo($request, $response, ['appId' => $appId]);
 	});
 })->add($container->get(\BidsRtc\Backend\Middleware\AuthMiddleware::class));
 
@@ -91,21 +91,21 @@ $app->group('/clients', function ($group) use ($container) {
 	});
 
 	// クライアント情報取得
-	$group->get('/{clientId}', function (Request $request, Response $response, array $args) use ($container) {
+	$group->get('/{clientId}', function (Request $request, Response $response, string $clientId) use ($container) {
 		$controller = new Controller\ClientManagementController(
 			service: $container->get(\BidsRtc\Backend\Service\ClientManagementService::class),
 			logger: $container->get(\Psr\Log\LoggerInterface::class),
 		);
-		return $controller->getClientInfo($request, $response, $args);
+		return $controller->getClientInfo($request, $response, ['clientId' => $clientId]);
 	});
 
 	// クライアント削除
-	$group->delete('/{clientId}', function (Request $request, Response $response, array $args) use ($container) {
+	$group->delete('/{clientId}', function (Request $request, Response $response, string $clientId) use ($container) {
 		$controller = new Controller\ClientManagementController(
 			service: $container->get(\BidsRtc\Backend\Service\ClientManagementService::class),
 			logger: $container->get(\Psr\Log\LoggerInterface::class),
 		);
-		return $controller->deleteClientInfo($request, $response, $args);
+		return $controller->deleteClientInfo($request, $response, ['clientId' => $clientId]);
 	});
 })->add($container->get(\BidsRtc\Backend\Middleware\AuthMiddleware::class));
 
@@ -120,14 +120,14 @@ $app->post('/answer', function (Request $request, Response $response) use ($cont
 	return $controller->registerAnswer($request, $response);
 })->add($container->get(\BidsRtc\Backend\Middleware\MyJwtAuthMiddleware::class));
 
-$app->get('/answer/{sdpId}', function (Request $request, Response $response, array $args) use ($container) {
+$app->get('/answer/{sdpId}', function (Request $request, Response $response, string $sdpId) use ($container) {
 	$controller = $container->get(\BidsRtc\Backend\Controller\SDPExchangeController::class);
-	return $controller->getAnswer($request, $response, $args);
+	return $controller->getAnswer($request, $response, ['sdpId' => $sdpId]);
 })->add($container->get(\BidsRtc\Backend\Middleware\MyJwtAuthMiddleware::class));
 
-$app->delete('/exchange/{sdpId}', function (Request $request, Response $response, array $args) use ($container) {
+$app->delete('/exchange/{sdpId}', function (Request $request, Response $response, string $sdpId) use ($container) {
 	$controller = $container->get(\BidsRtc\Backend\Controller\SDPExchangeController::class);
-	return $controller->deleteSDPExchange($request, $response, $args);
+	return $controller->deleteSDPExchange($request, $response, ['sdpId' => $sdpId]);
 })->add($container->get(\BidsRtc\Backend\Middleware\MyJwtAuthMiddleware::class));
 
 // 管理者API — Firebase 認証必須

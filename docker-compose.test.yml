@@ -107,8 +107,6 @@ services:
       - ./dev/backend/src:/var/www/html/src:ro
       - ./dev/backend/config:/var/www/html/config:ro
       - ./dev/backend/public:/var/www/html/public:ro
-      - /tmp/e2e-logs:/var/www/html/logs
-      - /tmp/e2e-cache:/var/www/html/cache
     depends_on:
       test-mysql:
         condition: service_healthy

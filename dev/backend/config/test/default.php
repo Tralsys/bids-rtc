@@ -36,12 +36,12 @@ return [
     // Firebase設定（エミュレーターモード: FIREBASE_AUTH_EMULATOR_HOST 環境変数で制御）
     'firebase.project_id' => getenv('FIREBASE_PROJECT_ID') ?: '',
     'firebase.sa_file' => null,
-    'firebase.api_token_cache_dir' => __DIR__ . '/../../cache/firebase/api_token',
-    'firebase.auth.pubkey_cache_dir' => __DIR__ . '/../../cache/firebase/auth_pubkey',
+    'firebase.api_token_cache_dir' => '/tmp/firebase-api-token',
+    'firebase.auth.pubkey_cache_dir' => '/tmp/firebase-auth-pubkey',
 
-    // JWT設定（開発用キーを流用）
-    'my-auth.private_key' => __DIR__ . '/../../config/dev/jwt-private.pem',
-    'my-auth.public_key' => __DIR__ . '/../../config/dev/jwt-public.pem',
+    // JWT設定（テスト専用キー）
+    'my-auth.private_key' => __DIR__ . '/jwt-private.pem',
+    'my-auth.public_key' => __DIR__ . '/jwt-public.pem',
     'my-auth.issuer' => 'bids-rtc',
 
     // CORS設定
@@ -56,5 +56,5 @@ return [
     ],
 
     // 管理者ログディレクトリ
-    'admin.logs_dir' => __DIR__ . '/../../logs',
+    'admin.logs_dir' => '/tmp',
 ];

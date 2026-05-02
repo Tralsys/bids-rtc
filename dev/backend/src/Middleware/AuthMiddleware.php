@@ -76,24 +76,6 @@ class AuthMiddleware implements MiddlewareInterface
 					'claims' => $claims,
 				]);
 			}
-
-			// Add user info to request attributes
-			$request = $request->withAttribute(Constants::ATTR_NAME_UID, $uid);
-
-			// Extract role from custom claims
-			// Firebase stores custom claims at the root level of the token
-			$role = $claims['role'] ?? null;
-
-			if ($role !== null) {
-				$request = $request->withAttribute(Constants::ATTR_NAME_USER_ROLE, $role);
-				$this->logger->debug('User role set', ['role' => $role]);
-			} else {
-				$this->logger->debug('No role claim found in token');
-			}
-
-			// Continue with the authenticated request
-			return $handler->handle($request);
-
 		} catch (\Kreait\Firebase\Exception\Auth\FailedToVerifyToken $e) {
 			$this->logger->warning('Failed to verify Firebase token', [
 				'error' => $e->getMessage(),
@@ -106,6 +88,22 @@ class AuthMiddleware implements MiddlewareInterface
 			]);
 			return $this->unauthorizedResponse('Authentication error');
 		}
+
+		// Add user info to request attributes
+		$request = $request->withAttribute(Constants::ATTR_NAME_UID, $uid);
+
+		// Extract role from custom claims
+		// Firebase stores custom claims at the root level of the token
+		$role = $claims['role'] ?? null;
+
+		if ($role !== null) {
+			$request = $request->withAttribute(Constants::ATTR_NAME_USER_ROLE, $role);
+			$this->logger->debug('User role set', ['role' => $role]);
+		} else {
+			$this->logger->debug('No role claim found in token');
+		}
+
+		return $handler->handle($request);
 	}
 
 	private function unauthorizedResponse(string $message): ResponseInterface
