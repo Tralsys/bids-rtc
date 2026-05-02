@@ -8,6 +8,7 @@ use BidsRtc\Backend\Model\ClientInfo;
 use BidsRtc\Backend\Model\ClientInfoWithToken;
 use BidsRtc\Backend\Repository\ClientTableRepository;
 use BidsRtc\Backend\RetValueOrError;
+use BidsRtc\Backend\Service\Auth\MyJwtClaims;
 use BidsRtc\Backend\Utils;
 use PDO;
 use Psr\Http\Message\ResponseInterface;
@@ -31,8 +32,7 @@ class ClientManagementService
   public function __construct(
     private readonly PDO $db,
     private readonly LoggerInterface $logger,
-    // 認証関連は後で実装
-    // private readonly AuthUtil $authUtil,
+    private readonly MyJwtUtil $jwtUtil,
   ) {
     $this->repo = new ClientTableRepository($this->db, $this->logger);
   }
@@ -79,14 +79,40 @@ class ClientManagementService
   }
 
   /**
-   * クライアントアクセストークンを取得
-   * （簡易実装 - 本格的な実装は認証ユーティリティが必要）
+   * リフレッシュトークンを検証して新しいアクセストークンを発行する
+   *
+   * @throws RetValueOrError 400/401/404 のいずれか
    */
   public function getClientAccessToken(string $unverifiedRawRefreshToken): string
   {
-    // TODO: 本格的なトークン検証と発行を実装
-    // 現在は簡易実装
-    throw new RetValueOrError(501, "Token generation not implemented yet");
+    // JWT パース + 署名/issuer 検証
+    $claims = $this->jwtUtil->parseAndValidate($unverifiedRawRefreshToken);
+
+    // typ クレームがリフレッシュトークンであること
+    if ($claims->keyType !== MyJwtClaims::KEY_TYPE_REFRESH) {
+      throw new RetValueOrError(401, 'Token type mismatch');
+    }
+
+    // DB からハッシュ済みリフレッシュトークンを取得
+    $hashedUid = Utils::getHashedUserId($claims->uid);
+
+    try {
+      $storedHash = $this->repo->selectOneRefreshToken($hashedUid, $claims->clientId);
+    } catch (\PDOException $e) {
+      throw new RetValueOrError(500, 'Database error: ' . $e->getMessage());
+    }
+
+    if ($storedHash === null) {
+      throw new RetValueOrError(404, 'Client not found');
+    }
+
+    // password_verify でリフレッシュトークンの正当性を確認
+    if (!password_verify($unverifiedRawRefreshToken, $storedHash)) {
+      throw new RetValueOrError(401, 'Invalid refresh token');
+    }
+
+    // 新しいアクセストークンを発行して返す
+    return $this->jwtUtil->issueAccessToken($claims->uid, $claims->appId, $claims->clientId);
   }
 
   /**
@@ -142,8 +168,8 @@ class ClientManagementService
 
       $clientId = Uuid::uuid7();
 
-      // リフレッシュトークンの生成（簡易実装）
-      $refreshToken = bin2hex(random_bytes(32));
+      // JWT リフレッシュトークンの生成
+      $refreshToken = $this->jwtUtil->issueRefreshToken($this->rawUserId, $appId, $clientId);
       $refreshTokenHash = password_hash($refreshToken, PASSWORD_DEFAULT);
 
       $this->db->beginTransaction();

@@ -58,6 +58,11 @@ class ClientManagementController
     description: 'エラー',
     content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')
   )]
+  #[OA\Response(
+    response: 404,
+    description: 'クライアントが見つからない',
+    content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')
+  )]
   public function getClientAccessToken(
     ServerRequestInterface $request,
     ResponseInterface $response,
