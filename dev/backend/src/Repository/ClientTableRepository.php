@@ -211,6 +211,41 @@ class ClientTableRepository
   }
 
   /**
+   * リフレッシュトークンハッシュをCAS（compare-and-swap）で更新する。
+   * 現在のハッシュが $old_hash と一致する行だけ更新し、更新行数を返す。
+   * 0 は別リクエストがすでにローテーション済み、またはクライアント削除済みを意味する。
+   */
+  public function updateRefreshTokenCas(
+    string $hashed_user_id,
+    UuidInterface $client_id,
+    string $old_hash,
+    string $new_hash,
+  ): int {
+    try {
+      $query = $this->db->prepare(<<<SQL
+                UPDATE `clients`
+                SET `refresh_token` = :new_hash
+                WHERE `user_id` = :hashed_user_id
+                    AND `client_id` = :client_id
+                    AND `refresh_token` = :old_hash
+                    AND `deleted_at` IS NULL
+                SQL,
+      );
+
+      $query->bindValue(':hashed_user_id', $hashed_user_id, PDO::PARAM_STR);
+      $query->bindValue(':client_id', $client_id->getBytes(), PDO::PARAM_STR);
+      $query->bindValue(':old_hash', $old_hash, PDO::PARAM_STR);
+      $query->bindValue(':new_hash', $new_hash, PDO::PARAM_STR);
+      $query->execute();
+
+      return $query->rowCount();
+    } catch (\PDOException $ex) {
+      $this->logger->error("Failed to execute SQL", ['error' => $ex->getMessage()]);
+      throw $ex;
+    }
+  }
+
+  /**
    * クライアントを削除（論理削除）
    */
   public function delete(string $hashed_user_id, UuidInterface $client_id): int

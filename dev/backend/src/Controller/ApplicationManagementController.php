@@ -107,7 +107,7 @@ class ApplicationManagementController
 		)
 	)]
 	#[OA\Response(
-		response: 200,
+		response: 201,
 		description: '作成結果',
 		content: new OA\JsonContent(ref: '#/components/schemas/ApplicationInfo')
 	)]

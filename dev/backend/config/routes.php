@@ -49,6 +49,15 @@ $app->put('/client_token', function (Request $request, Response $response) use (
 	return $controller->getClientAccessToken($request, $response);
 });
 
+// リフレッシュトークンローテーション — 認証なし (raw refresh token を body で受ける)
+$app->post('/client_token/rotate', function (Request $request, Response $response) use ($container) {
+	$controller = new Controller\ClientManagementController(
+		service: $container->get(\BidsRtc\Backend\Service\ClientManagementService::class),
+		logger: $container->get(\Psr\Log\LoggerInterface::class),
+	);
+	return $controller->rotateClientToken($request, $response);
+});
+
 // アプリケーション管理 — Firebase 認証必須
 $app->group('/apps', function ($group) use ($container) {
 	// アプリケーション作成

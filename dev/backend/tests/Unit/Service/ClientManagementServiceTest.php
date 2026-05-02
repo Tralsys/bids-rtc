@@ -15,7 +15,7 @@ use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
 
 /**
- * Unit tests for ClientManagementService::getClientAccessToken
+ * Unit tests for ClientManagementService
  *
  * ClientTableRepository is created internally via `new` in the constructor,
  * so PDO and PDOStatement are mocked to control repository behaviour.
@@ -68,6 +68,28 @@ class ClientManagementServiceTest extends TestCase
         $mockStmt->method('fetch')->willReturn($fetchReturn);
 
         $this->mockPdo->method('prepare')->willReturn($mockStmt);
+    }
+
+    // ------------------------------------------------------------------
+    // Helper: configure PDO so first prepare() returns a SELECT stmt
+    //         (returning $fetchReturn) and second returns an UPDATE stmt
+    //         (returning $updateRowCount via rowCount()).
+    // ------------------------------------------------------------------
+
+    private function configurePdoFetchThenUpdate(mixed $fetchReturn, int $updateRowCount): void
+    {
+        $selectStmt = $this->createMock(PDOStatement::class);
+        $selectStmt->method('bindValue')->willReturn(true);
+        $selectStmt->method('execute')->willReturn(true);
+        $selectStmt->method('fetch')->willReturn($fetchReturn);
+
+        $updateStmt = $this->createMock(PDOStatement::class);
+        $updateStmt->method('bindValue')->willReturn(true);
+        $updateStmt->method('execute')->willReturn(true);
+        $updateStmt->method('rowCount')->willReturn($updateRowCount);
+
+        $this->mockPdo->method('prepare')
+            ->willReturnOnConsecutiveCalls($selectStmt, $updateStmt);
     }
 
     // ------------------------------------------------------------------
@@ -153,8 +175,7 @@ class ClientManagementServiceTest extends TestCase
             ->method('parseAndValidate')
             ->willReturn($claims);
 
-        // Hash of a completely different token string
-        $storedHash = password_hash('some-other-token', PASSWORD_DEFAULT);
+        $storedHash = hash('sha256', 'some-other-token');
         $this->configurePdoFetch(['refresh_token_hash' => $storedHash]);
 
         $this->expectException(RetValueOrError::class);
@@ -177,8 +198,7 @@ class ClientManagementServiceTest extends TestCase
             ->method('parseAndValidate')
             ->willReturn($claims);
 
-        // Hash of the same token that will be passed to the service
-        $storedHash = password_hash($refreshTokenStr, PASSWORD_DEFAULT);
+        $storedHash = hash('sha256', $refreshTokenStr);
         $this->configurePdoFetch(['refresh_token_hash' => $storedHash]);
 
         $this->mockJwtUtil
@@ -188,5 +208,164 @@ class ClientManagementServiceTest extends TestCase
         $result = $this->service->getClientAccessToken($refreshTokenStr);
 
         $this->assertSame('access-token-string', $result);
+    }
+
+    // ==================================================================
+    // rotateRefreshToken tests
+    // ==================================================================
+
+    // ------------------------------------------------------------------
+    // Test 6: parseAndValidate throws → propagates without touching DB
+    // ------------------------------------------------------------------
+
+    public function testRotateRefreshTokenJwtValidationError(): void
+    {
+        $this->mockPdo
+            ->expects($this->never())
+            ->method('prepare');
+
+        $this->mockJwtUtil
+            ->method('parseAndValidate')
+            ->willThrowException(new RetValueOrError(401, 'Invalid token'));
+
+        $this->expectException(RetValueOrError::class);
+        $this->expectExceptionCode(401);
+
+        $this->service->rotateRefreshToken('bad-token');
+    }
+
+    // ------------------------------------------------------------------
+    // Test 7: access token (typ=access) used instead of refresh → 401
+    // ------------------------------------------------------------------
+
+    public function testRotateRefreshTokenAccessTokenRejected(): void
+    {
+        $this->mockPdo
+            ->expects($this->never())
+            ->method('prepare');
+
+        $accessClaims = new MyJwtClaims(
+            uid: 'test-uid',
+            appId: Uuid::uuid4(),
+            clientId: Uuid::uuid4(),
+            keyType: MyJwtClaims::KEY_TYPE_ACCESS,
+            issuedAt: new \DateTimeImmutable(),
+        );
+
+        $this->mockJwtUtil
+            ->method('parseAndValidate')
+            ->willReturn($accessClaims);
+
+        $this->expectException(RetValueOrError::class);
+        $this->expectExceptionCode(401);
+        $this->expectExceptionMessage('Token type mismatch');
+
+        $this->service->rotateRefreshToken('some-access-token');
+    }
+
+    // ------------------------------------------------------------------
+    // Test 8: DB returns null (client not found) → 404
+    // ------------------------------------------------------------------
+
+    public function testRotateRefreshTokenClientNotFound(): void
+    {
+        $claims = $this->buildRefreshClaims();
+
+        $this->mockJwtUtil
+            ->method('parseAndValidate')
+            ->willReturn($claims);
+
+        $this->configurePdoFetch(false);
+
+        $this->expectException(RetValueOrError::class);
+        $this->expectExceptionCode(404);
+
+        $this->service->rotateRefreshToken('valid-refresh-token');
+    }
+
+    // ------------------------------------------------------------------
+    // Test 9: stored hash does not match → password_verify fails → 401
+    // ------------------------------------------------------------------
+
+    public function testRotateRefreshTokenHashMismatch(): void
+    {
+        $claims = $this->buildRefreshClaims();
+
+        $this->mockJwtUtil
+            ->method('parseAndValidate')
+            ->willReturn($claims);
+
+        $storedHash = hash('sha256', 'different-token');
+        $this->configurePdoFetch(['refresh_token_hash' => $storedHash]);
+
+        $this->expectException(RetValueOrError::class);
+        $this->expectExceptionCode(401);
+        $this->expectExceptionMessage('Invalid refresh token');
+
+        $this->service->rotateRefreshToken('valid-refresh-token');
+    }
+
+    // ------------------------------------------------------------------
+    // Test 10: CAS UPDATE returns 0 (already rotated by concurrent req) → 401
+    // ------------------------------------------------------------------
+
+    public function testRotateRefreshTokenAlreadyRotated(): void
+    {
+        $refreshTokenStr = 'concurrent-token';
+        $claims          = $this->buildRefreshClaims();
+
+        $this->mockJwtUtil
+            ->method('parseAndValidate')
+            ->willReturn($claims);
+
+        $this->mockJwtUtil
+            ->method('issueRefreshToken')
+            ->willReturn('new-refresh-token');
+
+        $this->mockJwtUtil
+            ->method('issueAccessToken')
+            ->willReturn('new-access-token');
+
+        $storedHash = hash('sha256', $refreshTokenStr);
+        // SELECT returns the hash, UPDATE returns 0 rows (race)
+        $this->configurePdoFetchThenUpdate(['refresh_token_hash' => $storedHash], 0);
+
+        $this->expectException(RetValueOrError::class);
+        $this->expectExceptionCode(401);
+        $this->expectExceptionMessage('Refresh token already rotated');
+
+        $this->service->rotateRefreshToken($refreshTokenStr);
+    }
+
+    // ------------------------------------------------------------------
+    // Test 11: happy path → returns ClientTokenPair with new tokens
+    // ------------------------------------------------------------------
+
+    public function testRotateRefreshTokenSuccess(): void
+    {
+        $refreshTokenStr   = 'current-valid-refresh-token';
+        $newRefreshToken   = 'new-refresh-token';
+        $newAccessToken    = 'new-access-token';
+        $claims            = $this->buildRefreshClaims();
+
+        $this->mockJwtUtil
+            ->method('parseAndValidate')
+            ->willReturn($claims);
+
+        $this->mockJwtUtil
+            ->method('issueRefreshToken')
+            ->willReturn($newRefreshToken);
+
+        $this->mockJwtUtil
+            ->method('issueAccessToken')
+            ->willReturn($newAccessToken);
+
+        $storedHash = hash('sha256', $refreshTokenStr);
+        $this->configurePdoFetchThenUpdate(['refresh_token_hash' => $storedHash], 1);
+
+        $result = $this->service->rotateRefreshToken($refreshTokenStr);
+
+        $this->assertSame($newRefreshToken, $result->refresh_token);
+        $this->assertSame($newAccessToken, $result->access_token);
     }
 }

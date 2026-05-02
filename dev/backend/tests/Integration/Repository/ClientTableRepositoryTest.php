@@ -150,4 +150,61 @@ class ClientTableRepositoryTest extends IntegrationTestCase
         $rowCount = $repo->delete($userId, $unknown);
         $this->assertSame(0, $rowCount);
     }
+
+    // -------------------------------------------------------------------------
+    // Test 8: updateRefreshTokenCas updates hash when old_hash matches
+    // -------------------------------------------------------------------------
+
+    public function testUpdateRefreshTokenCasSuccess(): void
+    {
+        $appId    = $this->insertTestApp();
+        $clientId = Uuid::uuid7();
+        $userId   = $this->hashedUserId();
+        $oldHash  = 'old_hash_value';
+        $newHash  = 'new_hash_value';
+        $repo     = new ClientTableRepository(self::$pdo, $this->createNullLogger());
+
+        $repo->createNewClient($userId, $clientId, $appId, 'Rotate Client', $oldHash);
+
+        $rowCount = $repo->updateRefreshTokenCas($userId, $clientId, $oldHash, $newHash);
+        $this->assertSame(1, $rowCount);
+
+        $retrieved = $repo->selectOneRefreshToken($userId, $clientId);
+        $this->assertSame($newHash, $retrieved);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 9: updateRefreshTokenCas returns 0 when old_hash does not match (CAS guard)
+    // -------------------------------------------------------------------------
+
+    public function testUpdateRefreshTokenCasHashMismatch(): void
+    {
+        $appId    = $this->insertTestApp();
+        $clientId = Uuid::uuid7();
+        $userId   = $this->hashedUserId();
+        $repo     = new ClientTableRepository(self::$pdo, $this->createNullLogger());
+
+        $repo->createNewClient($userId, $clientId, $appId, 'CAS Client', 'current_hash');
+
+        $rowCount = $repo->updateRefreshTokenCas($userId, $clientId, 'stale_hash', 'new_hash');
+        $this->assertSame(0, $rowCount);
+
+        // Original hash must remain unchanged
+        $retrieved = $repo->selectOneRefreshToken($userId, $clientId);
+        $this->assertSame('current_hash', $retrieved);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 10: updateRefreshTokenCas returns 0 for unknown client
+    // -------------------------------------------------------------------------
+
+    public function testUpdateRefreshTokenCasUnknownClient(): void
+    {
+        $repo    = new ClientTableRepository(self::$pdo, $this->createNullLogger());
+        $userId  = $this->hashedUserId();
+        $unknown = Uuid::uuid7();
+
+        $rowCount = $repo->updateRefreshTokenCas($userId, $unknown, 'any_hash', 'new_hash');
+        $this->assertSame(0, $rowCount);
+    }
 }

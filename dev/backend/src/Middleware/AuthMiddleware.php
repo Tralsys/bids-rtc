@@ -30,8 +30,7 @@ class AuthMiddleware implements MiddlewareInterface
 
 		if (empty($authHeader)) {
 			$this->logger->debug('No Authorization header present');
-			// Continue without setting user attributes
-			return $handler->handle($request);
+			return $this->unauthorizedResponse('Authorization required');
 		}
 
 		// Extract Bearer token

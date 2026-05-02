@@ -6,6 +6,7 @@ namespace BidsRtc\Backend\Controller;
 
 use BidsRtc\Backend\Model\ClientInfo;
 use BidsRtc\Backend\Model\ClientInfoWithToken;
+use BidsRtc\Backend\Model\ClientTokenPair;
 use BidsRtc\Backend\Model\ErrorResponse;
 use BidsRtc\Backend\Service\ClientManagementService;
 use BidsRtc\Backend\RetValueOrError;
@@ -82,6 +83,59 @@ class ClientManagementController
       $response->getBody()->write($accessToken);
 
       return $response;
+    } catch (RetValueOrError $e) {
+      return $e->getResponseWithJson($response);
+    } catch (\Exception $e) {
+      $this->logger->error($e->getMessage());
+      return Utils::withError($response, 500, $e->getMessage());
+    }
+  }
+
+  /**
+   * リフレッシュトークンをローテーション
+   */
+  #[OA\Post(
+    path: '/client_token/rotate',
+    operationId: 'rotateClientToken',
+    summary: 'リフレッシュトークンをローテーションして新しいトークンペアを取得',
+    tags: ['Client Management']
+  )]
+  #[OA\RequestBody(
+    required: true,
+    content: new OA\MediaType(
+      mediaType: 'application/jose',
+      schema: new OA\Schema(type: 'string', description: '現在のリフレッシュトークン'),
+    )
+  )]
+  #[OA\Response(
+    response: 200,
+    description: '新しいリフレッシュトークンとアクセストークン',
+    content: new OA\JsonContent(ref: '#/components/schemas/ClientTokenPair')
+  )]
+  #[OA\Response(
+    response: 401,
+    description: 'エラー',
+    content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')
+  )]
+  #[OA\Response(
+    response: 404,
+    description: 'クライアントが見つからない',
+    content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')
+  )]
+  public function rotateClientToken(
+    ServerRequestInterface $request,
+    ResponseInterface $response,
+  ): ResponseInterface {
+    try {
+      $rawRefreshToken = $request->getBody()->getContents();
+
+      if ($rawRefreshToken === '') {
+        return Utils::withError($response, 400, 'Empty request body');
+      }
+
+      $tokenPair = $this->service->rotateRefreshToken($rawRefreshToken);
+
+      return Utils::withJson($response, $tokenPair);
     } catch (RetValueOrError $e) {
       return $e->getResponseWithJson($response);
     } catch (\Exception $e) {
@@ -179,6 +233,10 @@ class ClientManagementController
 
       if (!Uuid::isValid($appIdStr)) {
         return Utils::withError($response, 400, 'Invalid app_id format');
+      }
+
+      if ($name === '') {
+        return Utils::withError($response, 400, 'Client name is required');
       }
 
       if (mb_strlen($name) > self::MAX_CLIENT_NAME_LENGTH) {

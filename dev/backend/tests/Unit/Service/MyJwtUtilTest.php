@@ -193,18 +193,41 @@ class MyJwtUtilTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
-    // Test 9: refresh token can be parsed without triggering an expiry error
+    // Test 9: freshly-issued refresh token can be parsed without expiry error
     // -------------------------------------------------------------------------
 
-    public function testRefreshTokenHasNoExpiry(): void
+    public function testRefreshTokenNotExpiredOnIssue(): void
     {
-        $uid   = 'uid-refresh-noexp';
+        $uid   = 'uid-refresh-fresh';
         $token = self::$jwtUtil->issueRefreshToken($uid, self::$appId, self::$clientId);
 
-        // No exception expected — refresh tokens have no exp claim.
         $claims = self::$jwtUtil->parseAndValidate($token);
 
         $this->assertSame(MyJwtClaims::KEY_TYPE_REFRESH, $claims->keyType);
         $this->assertSame($uid, $claims->uid);
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 10: refresh token with exp in the past throws RetValueOrError 401
+    // -------------------------------------------------------------------------
+
+    public function testParseAndValidateExpiredRefreshTokenThrows401(): void
+    {
+        $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $expiredToken = self::$jwtConfig->builder()
+            ->issuedBy(self::$issuer)
+            ->issuedAt($now->modify('-2 years'))
+            ->expiresAt($now->modify('-1 year'))
+            ->relatedTo('uid-expired-refresh')
+            ->withClaim('app_id', self::$appId->toString())
+            ->withClaim('client_id', self::$clientId->toString())
+            ->withClaim('typ', MyJwtClaims::KEY_TYPE_REFRESH)
+            ->getToken(self::$jwtConfig->signer(), self::$jwtConfig->signingKey())
+            ->toString();
+
+        $this->expectException(RetValueOrError::class);
+        $this->expectExceptionCode(401);
+
+        self::$jwtUtil->parseAndValidate($expiredToken);
     }
 }

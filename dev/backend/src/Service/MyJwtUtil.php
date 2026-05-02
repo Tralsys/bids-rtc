@@ -25,6 +25,7 @@ class MyJwtUtil
 	private const string KEY_TYPE_CLAIM = 'typ';
 
 	private const string ACCESS_TOKEN_EXPIRE_INTERVAL = 'PT1H';
+	private const string REFRESH_TOKEN_EXPIRE_INTERVAL = 'P1Y';
 
 	public function __construct(
 		private readonly Configuration $jwtConfig,
@@ -65,12 +66,10 @@ class MyJwtUtil
 			throw new RetValueOrError(401, 'Invalid token: unknown key type');
 		}
 
-		// アクセストークンの場合のみ有効期限チェック
-		if ($keyType === MyJwtClaims::KEY_TYPE_ACCESS) {
-			$now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
-			if ($token->isExpired($now)) {
-				throw new RetValueOrError(401, 'Token is expired');
-			}
+		// 有効期限チェック
+		$now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+		if ($token->isExpired($now)) {
+			throw new RetValueOrError(401, 'Token is expired');
 		}
 
 		// 必須クレームを取り出す
@@ -118,15 +117,17 @@ class MyJwtUtil
 	}
 
 	/**
-	 * リフレッシュトークン (typ=refresh, exp なし) を発行して JWT 文字列を返す。
+	 * リフレッシュトークン (typ=refresh, exp=now+1y) を発行して JWT 文字列を返す。
 	 */
 	public function issueRefreshToken(string $uid, UuidInterface $appId, UuidInterface $clientId): string
 	{
 		$now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+		$exp = $now->add(new \DateInterval(self::REFRESH_TOKEN_EXPIRE_INTERVAL));
 
 		return $this->jwtConfig->builder()
 			->issuedBy($this->issuer)
 			->issuedAt($now)
+			->expiresAt($exp)
 			->relatedTo($uid)
 			->withClaim(self::APP_ID_CLAIM, $appId->toString())
 			->withClaim(self::CLIENT_ID_CLAIM, $clientId->toString())
