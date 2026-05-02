@@ -110,4 +110,19 @@ return [
 	// Services
 	\BidsRtc\Backend\Service\AppManagementService::class => DI\autowire(),
 	\BidsRtc\Backend\Service\ClientManagementService::class => DI\autowire(),
+
+	// MyJwtUtil — issuer は config から注入
+	\BidsRtc\Backend\Service\MyJwtUtil::class => DI\autowire()
+		->constructorParameter('issuer', DI\get('my-auth.issuer')),
+
+	// SDPExchangeService 関連
+	\BidsRtc\Backend\Service\SDPEncryptAndDecrypt::class => DI\autowire(),
+	\BidsRtc\Backend\Service\SDPExchangeService::class => DI\autowire(),
+	\BidsRtc\Backend\Repository\SdpTableRepository::class => DI\autowire(),
+
+	// SDPExchangeController
+	\BidsRtc\Backend\Controller\SDPExchangeController::class => DI\autowire(),
+
+	// MyJwt 用 Middleware
+	\BidsRtc\Backend\Middleware\MyJwtAuthMiddleware::class => DI\autowire(),
 ];

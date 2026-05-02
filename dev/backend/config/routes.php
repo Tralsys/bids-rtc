@@ -20,7 +20,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 /** @var ContainerInterface $container */
 $container = $app->getContainer();
 
-// OPTIONSリクエスト対応（CORS）
+// OPTIONSリクエスト対応（CORS） — 認証なし
 $app->options('/{routes:.*}', function (Request $request, Response $response) {
 	$response = $response->withStatus(204);
 	$response = $response->withHeader('Access-Control-Allow-Origin', '*');
@@ -31,7 +31,7 @@ $app->options('/{routes:.*}', function (Request $request, Response $response) {
 	return $response;
 });
 
-// API情報取得
+// API情報取得 — 認証なし
 $app->get('/', function (Request $request, Response $response) use ($container) {
 	$controller = new Controller\ApiInfoController(
 		serverName: $container->get('app.name'),
@@ -40,7 +40,16 @@ $app->get('/', function (Request $request, Response $response) use ($container) 
 	return $controller->getApiInfo($request, $response);
 });
 
-// アプリケーション管理
+// クライアントアクセストークン取得 — 認証なし (raw refresh token を body で受ける)
+$app->put('/client_token', function (Request $request, Response $response) use ($container) {
+	$controller = new Controller\ClientManagementController(
+		service: $container->get(\BidsRtc\Backend\Service\ClientManagementService::class),
+		logger: $container->get(\Psr\Log\LoggerInterface::class),
+	);
+	return $controller->getClientAccessToken($request, $response);
+});
+
+// アプリケーション管理 — Firebase 認証必須
 $app->group('/apps', function ($group) use ($container) {
 	// アプリケーション作成
 	$group->post('', function (Request $request, Response $response) use ($container) {
@@ -59,20 +68,9 @@ $app->group('/apps', function ($group) use ($container) {
 		);
 		return $controller->getApplicationInfo($request, $response, $args);
 	});
-});
+})->add($container->get(\BidsRtc\Backend\Middleware\AuthMiddleware::class));
 
-// クライアント管理
-$app->group('/client', function ($group) use ($container) {
-	// クライアントアクセストークン取得
-	$group->put('_token', function (Request $request, Response $response) use ($container) {
-		$controller = new Controller\ClientManagementController(
-			service: $container->get(\BidsRtc\Backend\Service\ClientManagementService::class),
-			logger: $container->get(\Psr\Log\LoggerInterface::class),
-		);
-		return $controller->getClientAccessToken($request, $response);
-	});
-});
-
+// クライアント管理 — Firebase 認証必須
 $app->group('/clients', function ($group) use ($container) {
 	// クライアント一覧取得
 	$group->get('', function (Request $request, Response $response) use ($container) {
@@ -109,38 +107,30 @@ $app->group('/clients', function ($group) use ($container) {
 		);
 		return $controller->deleteClientInfo($request, $response, $args);
 	});
-});
+})->add($container->get(\BidsRtc\Backend\Middleware\AuthMiddleware::class));
 
-// SDP交換
+// SDP交換 — MyJwt 認証必須
 $app->post('/offer', function (Request $request, Response $response) use ($container) {
-	$controller = new Controller\SDPExchangeController(
-		logger: $container->get(\Psr\Log\LoggerInterface::class),
-	);
+	$controller = $container->get(\BidsRtc\Backend\Controller\SDPExchangeController::class);
 	return $controller->registerOffer($request, $response);
-});
+})->add($container->get(\BidsRtc\Backend\Middleware\MyJwtAuthMiddleware::class));
 
 $app->post('/answer', function (Request $request, Response $response) use ($container) {
-	$controller = new Controller\SDPExchangeController(
-		logger: $container->get(\Psr\Log\LoggerInterface::class),
-	);
+	$controller = $container->get(\BidsRtc\Backend\Controller\SDPExchangeController::class);
 	return $controller->registerAnswer($request, $response);
-});
+})->add($container->get(\BidsRtc\Backend\Middleware\MyJwtAuthMiddleware::class));
 
 $app->get('/answer/{sdpId}', function (Request $request, Response $response, array $args) use ($container) {
-	$controller = new Controller\SDPExchangeController(
-		logger: $container->get(\Psr\Log\LoggerInterface::class),
-	);
+	$controller = $container->get(\BidsRtc\Backend\Controller\SDPExchangeController::class);
 	return $controller->getAnswer($request, $response, $args);
-});
+})->add($container->get(\BidsRtc\Backend\Middleware\MyJwtAuthMiddleware::class));
 
 $app->delete('/exchange/{sdpId}', function (Request $request, Response $response, array $args) use ($container) {
-	$controller = new Controller\SDPExchangeController(
-		logger: $container->get(\Psr\Log\LoggerInterface::class),
-	);
+	$controller = $container->get(\BidsRtc\Backend\Controller\SDPExchangeController::class);
 	return $controller->deleteSDPExchange($request, $response, $args);
-});
+})->add($container->get(\BidsRtc\Backend\Middleware\MyJwtAuthMiddleware::class));
 
-// 管理者API
+// 管理者API — Firebase 認証必須
 $app->group('/admin', function ($group) use ($container) {
 	// ログファイル一覧取得
 	$group->get('/logs', function (Request $request, Response $response) use ($container) {
@@ -165,4 +155,4 @@ $app->group('/admin', function ($group) use ($container) {
 		$filename = $request->getAttribute('filename');
 		return $controller->getLogContent($request, $response, ['filename' => $filename]);
 	});
-});
+})->add($container->get(\BidsRtc\Backend\Middleware\AuthMiddleware::class));
