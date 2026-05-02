@@ -1,11 +1,12 @@
 openapi: 3.0.0
 info:
-  title: "BIDS WebRTC Signaling API"
-  description: "WebRTC Signaling API for BIDS"
+  title: 'BIDS WebRTC Signaling API'
+  description: 'WebRTC Signaling API for BIDS'
   version: 1.0.0
 servers:
-  - url: /api
-    description: "Signaling API Server"
+  -
+    url: /api
+    description: 'Signaling API Server'
 paths:
   /admin/logs:
     get:
@@ -15,36 +16,24 @@ paths:
       description: ログファイル一覧を取得
       operationId: getLogsList
       responses:
-        "200":
+        '200':
           description: ログファイル一覧
           content:
             application/json:
               schema:
                 properties:
-                  logs:
-                    {
-                      type: array,
-                      items:
-                        {
-                          properties:
-                            {
-                              name: { type: string },
-                              size: { type: integer },
-                              modified: { type: string },
-                            },
-                          type: object,
-                        },
-                    }
+                  logs: { type: array, items: { properties: { name: { type: string }, size: { type: integer }, modified: { type: string } }, type: object } }
                 type: object
-        "403":
+        '403':
           description: 権限エラー
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
       security:
-        - bearerAuth: []
-  "/admin/logs/{filename}":
+        -
+          bearerAuth: []
+  '/admin/logs/{filename}':
     get:
       tags:
         - Admin
@@ -52,14 +41,15 @@ paths:
       description: ログファイルの内容を取得
       operationId: getLogContent
       parameters:
-        - name: filename
+        -
+          name: filename
           in: path
           description: ログファイル名
           required: true
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: ログファイル内容
           content:
             application/json:
@@ -69,43 +59,45 @@ paths:
                   content: { type: string }
                   lines: { type: integer }
                 type: object
-        "403":
+        '403':
           description: 権限エラー
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
           description: ファイルが見つかりません
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
       security:
-        - bearerAuth: []
+        -
+          bearerAuth: []
   /:
     get:
       tags:
-        - "API Info"
+        - 'API Info'
       summary: APIの基本情報を取得
       description: APIの基本情報を取得
       operationId: getApiInfo
       responses:
-        "200":
+        '200':
           description: APIの情報
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiInfo"
-  "/apps/{appId}":
+                $ref: '#/components/schemas/ApiInfo'
+  '/apps/{appId}':
     get:
       tags:
-        - "Application Management"
+        - 'Application Management'
       summary: アプリケーション情報を取得
       description: アプリケーション情報を取得
       operationId: getApplicationInfo
       parameters:
-        - name: appId
+        -
+          name: appId
           in: path
           description: アプリケーションID
           required: true
@@ -113,28 +105,28 @@ paths:
             type: string
             format: uuid
       responses:
-        "200":
+        '200':
           description: そのアプリケーションの情報
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApplicationInfo"
-        "400":
+                $ref: '#/components/schemas/ApplicationInfo'
+        '400':
           description: 不正なリクエスト
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
           description: アプリケーションが見つからない
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
   /apps:
     post:
       tags:
-        - "Application Management"
+        - 'Application Management'
       summary: 新しいアプリケーションを作成
       description: 新しいアプリケーションを作成
       operationId: postApplicationInfo
@@ -159,30 +151,31 @@ paths:
                   type: string
               type: object
       responses:
-        "200":
+        '200':
           description: 作成結果
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApplicationInfo"
-        "400":
+                $ref: '#/components/schemas/ApplicationInfo'
+        '400':
           description: 不正なリクエスト
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "403":
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
           description: 権限がありません
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
       security:
-        - bearerAuth: []
+        -
+          bearerAuth: []
   /client_token:
     put:
       tags:
-        - "Client Management"
+        - 'Client Management'
       summary: クライアントアクセストークンを取得
       description: クライアントアクセストークンを取得
       operationId: getClientAccessToken
@@ -194,45 +187,52 @@ paths:
               description: リフレッシュトークン
               type: string
       responses:
-        "200":
+        '200':
           description: アクセストークン
           content:
             application/jose:
               schema:
                 type: string
-        "401":
+        '401':
           description: エラー
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: クライアントが見つからない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /clients:
     get:
       tags:
-        - "Client Management"
+        - 'Client Management'
       summary: クライアント情報一覧を取得
       description: クライアント情報一覧を取得
       operationId: getClientInfoList
       responses:
-        "200":
+        '200':
           description: クライアントの情報一覧
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/ClientInfo"
-        "401":
+                  $ref: '#/components/schemas/ClientInfo'
+        '401':
           description: エラー
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
       security:
-        - bearerAuth: []
+        -
+          bearerAuth: []
     post:
       tags:
-        - "Client Management"
+        - 'Client Management'
       summary: クライアント情報を登録
       description: クライアント情報を登録
       operationId: registerClientInfo
@@ -254,29 +254,31 @@ paths:
                   type: string
               type: object
       responses:
-        "201":
+        '201':
           description: クライアントの情報
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ClientInfoWithToken"
-        "401":
+                $ref: '#/components/schemas/ClientInfoWithToken'
+        '401':
           description: エラー
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
       security:
-        - bearerAuth: []
-  "/clients/{clientId}":
+        -
+          bearerAuth: []
+  '/clients/{clientId}':
     get:
       tags:
-        - "Client Management"
+        - 'Client Management'
       summary: クライアント情報を取得
       description: クライアント情報を取得
       operationId: getClientInfo
       parameters:
-        - name: clientId
+        -
+          name: clientId
           in: path
           description: クライアントID
           required: true
@@ -284,34 +286,36 @@ paths:
             type: string
             format: uuid
       responses:
-        "200":
+        '200':
           description: クライアントの情報
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ClientInfo"
-        "401":
+                $ref: '#/components/schemas/ClientInfo'
+        '401':
           description: エラー
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
           description: エラー
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
       security:
-        - bearerAuth: []
+        -
+          bearerAuth: []
     delete:
       tags:
-        - "Client Management"
+        - 'Client Management'
       summary: クライアント情報を削除
       description: クライアント情報を削除
       operationId: deleteClientInfo
       parameters:
-        - name: clientId
+        -
+          name: clientId
           in: path
           description: クライアントID
           required: true
@@ -319,110 +323,145 @@ paths:
             type: string
             format: uuid
       responses:
-        "200":
+        '200':
           description: 削除成功
-        "401":
+        '401':
           description: エラー
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
           description: エラー
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
       security:
-        - bearerAuth: []
+        -
+          bearerAuth: []
   /offer:
     post:
       tags:
-        - "SDP Exchange"
-      summary: "SDP Offerを登録"
+        - 'SDP Exchange'
+      summary: 'SDP Offerを登録'
       description: Offerを登録
       operationId: registerOffer
+      parameters:
+        -
+          name: X-Client-Id
+          in: header
+          description: クライアントID
+          required: true
+          schema:
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              required:
-                - offer_client_id
-                - offer
-              properties:
-                offer_client_id:
-                  description: Offerを送信するクライアントID
-                  type: string
-                  format: uuid
-                offer:
-                  description: "SDP Offer（Base64エンコード済み）"
-                  type: string
-              type: object
+              $ref: '#/components/schemas/PostSDPOfferInfoRequestBody'
       responses:
-        "201":
+        '201':
           description: Offer登録成功
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PostSDPOfferInfoResponse"
-        "401":
-          description: エラー
+                $ref: '#/components/schemas/PostSDPOfferInfoResponse'
+        '400':
+          description: リクエストエラー
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 権限エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
       security:
-        - bearerAuth: []
+        -
+          bearerAuth: []
   /answer:
     post:
       tags:
-        - "SDP Exchange"
-      summary: "SDP Answerを登録"
+        - 'SDP Exchange'
+      summary: 'SDP Answerを登録'
       description: Answerを登録
       operationId: registerAnswer
+      parameters:
+        -
+          name: X-Client-Id
+          in: header
+          description: クライアントID
+          required: true
+          schema:
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              required:
-                - sdp_id
-                - answer_client_id
-                - answer
-              properties:
-                sdp_id:
-                  description: SDP交換ID
-                  type: string
-                  format: uuid
-                answer_client_id:
-                  description: Answerを送信するクライアントID
-                  type: string
-                  format: uuid
-                answer:
-                  description: "SDP Answer（Base64エンコード済み）"
-                  type: string
-              type: object
+              type: array
+              items:
+                $ref: '#/components/schemas/SDPAnswerInfo'
       responses:
-        "201":
+        '201':
           description: Answer登録成功
-        "401":
-          description: エラー
+        '400':
+          description: リクエストエラー
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 権限エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 'SDP IDが見つからない'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
       security:
-        - bearerAuth: []
-  "/answer/{sdpId}":
+        -
+          bearerAuth: []
+  '/answer/{sdpId}':
     get:
       tags:
-        - "SDP Exchange"
-      summary: "SDP Answerを取得"
+        - 'SDP Exchange'
+      summary: 'SDP Answerを取得'
       description: Answerを取得
       operationId: getAnswer
       parameters:
-        - name: sdpId
+        -
+          name: X-Client-Id
+          in: header
+          description: クライアントID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        -
+          name: sdpId
           in: path
           description: SDP交換ID
           required: true
@@ -430,54 +469,95 @@ paths:
             type: string
             format: uuid
       responses:
-        "200":
+        '200':
           description: Answer取得成功
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SDPAnswerInfo"
-        "204":
-          description: Answer未登録
-        "401":
+                $ref: '#/components/schemas/SDPAnswerInfo'
+        '204':
+          description: 'Answer未登録 (タイムアウト)'
+        '400':
+          description: リクエストエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 権限エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
           description: エラー
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "404":
-          description: エラー
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
       security:
-        - bearerAuth: []
-  "/exchange/{sdpId}":
+        -
+          bearerAuth: []
+  '/exchange/{sdpId}':
     delete:
       tags:
-        - "SDP Exchange"
+        - 'SDP Exchange'
       summary: SDP交換を削除
       description: SDP交換を削除
       operationId: deleteSDPExchange
       parameters:
-        - name: sdpId
+        -
+          name: sdpId
           in: path
           description: SDP交換ID
           required: true
           schema:
             type: string
             format: uuid
+        -
+          name: X-Client-Id
+          in: header
+          description: クライアントID
+          required: true
+          schema:
+            type: string
+            format: uuid
       responses:
-        "204":
+        '204':
           description: 削除成功
-        "401":
+        '400':
+          description: リクエストエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 権限エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
           description: エラー
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
       security:
-        - bearerAuth: []
+        -
+          bearerAuth: []
 components:
   schemas:
     ApiInfo:
@@ -515,11 +595,11 @@ components:
         name:
           description: アプリケーション名
           type: string
-          example: "My Application"
+          example: 'My Application'
         description:
           description: アプリケーションの説明
           type: string
-          example: "This is my application"
+          example: 'This is my application'
         owner:
           description: オーナー
           type: string
@@ -529,7 +609,7 @@ components:
           type: string
           format: date-time
           readOnly: true
-          example: "2025-10-19T12:00:00Z"
+          example: '2025-10-19T12:00:00Z'
       type: object
     ClientInfo:
       title: ClientInfo
@@ -554,13 +634,13 @@ components:
         name:
           description: クライアント名
           type: string
-          example: "My Client"
+          example: 'My Client'
         created_at:
           description: 作成日時
           type: string
           format: date-time
           readOnly: true
-          example: "2025-10-19T12:00:00Z"
+          example: '2025-10-19T12:00:00Z'
       type: object
     ClientInfoWithToken:
       title: ClientInfoWithToken
@@ -570,7 +650,7 @@ components:
         - client_token
       properties:
         client_info:
-          $ref: "#/components/schemas/ClientInfo"
+          $ref: '#/components/schemas/ClientInfo'
         client_token:
           description: クライアントアクセストークン
           type: string
@@ -592,54 +672,105 @@ components:
               example: 400
             message:
               type: string
-              example: "Bad Request"
+              example: 'Bad Request'
           type: object
       type: object
-    PostSDPOfferInfoResponse:
-      title: PostSDPOfferInfoResponse
-      description: "SDP Offer登録レスポンス"
+    PostSDPOfferInfoRequestBody:
+      title: 'SDP OfferInfo POST Request Body'
+      description: 'SDP Offer登録リクエストボディ'
       required:
-        - sdp_id
+        - role
+        - offer
       properties:
-        sdp_id:
-          description: SDP交換ID
+        role:
+          description: Offerしたクライアントのロール
           type: string
-          format: uuid
+          enum:
+            - provider
+            - subscriber
+        offer:
+          description: 'Offer SDP (Base64エンコード済み)'
+          type: string
+          format: byte
+        established_clients:
+          description: 既に接続が確立されているクライアントのIDのリスト
+          type: array
+          items:
+            type: string
+            format: uuid
+          nullable: true
+      type: object
+    PostSDPOfferInfoResponse:
+      title: 'SDP OfferInfo POST Response'
+      description: 'SDP Offer登録レスポンス'
+      properties:
+        registered_offer:
+          oneOf:
+            -
+              $ref: '#/components/schemas/SDPOfferInfo'
+          nullable: true
+        received_offers:
+          type: array
+          items:
+            $ref: '#/components/schemas/SDPOfferInfo'
+          nullable: true
       type: object
     SDPAnswerInfo:
       title: SDPAnswerInfo
-      description: "SDP Answer情報"
+      description: 'SDP Answer情報'
       required:
         - sdp_id
-        - answer_client_id
         - answer
       properties:
         sdp_id:
           description: SDP交換ID
           type: string
           format: uuid
-        answer_client_id:
-          description: Answerを送信するクライアントID
-          type: string
-          format: uuid
         answer:
-          description: "SDP Answer（Base64エンコード済み）"
+          description: 'SDP Answer（Base64エンコード済み）'
           type: string
+          format: byte
+        answer_client_id:
+          description: Answerを送信したクライアントID
+          type: string
+          readOnly: true
+          nullable: true
       type: object
     SDPOfferInfo:
-      title: SDPOfferInfo
-      description: "SDP Offer情報"
+      title: 'SDP OfferInfo'
+      description: 'SDP Offer情報'
       required:
+        - sdp_id
         - offer_client_id
+        - offer_client_role
+        - created_at
         - offer
       properties:
-        offer_client_id:
-          description: Offerを送信するクライアントID
+        sdp_id:
+          description: 'SDP ID'
           type: string
           format: uuid
-        offer:
-          description: "SDP Offer（Base64エンコード済み）"
+          readOnly: true
+        offer_client_id:
+          description: Offerを送信したクライアントID
           type: string
+          format: uuid
+          readOnly: true
+        offer_client_role:
+          description: Offerしたクライアントのロール
+          type: string
+          enum:
+            - provider
+            - subscriber
+        created_at:
+          description: 作成日時
+          type: string
+          format: date-time
+          readOnly: true
+        offer:
+          description: 'Offer SDP (Base64エンコード済み)'
+          type: string
+          format: byte
       type: object
   securitySchemes:
     bearerAuth:
@@ -647,13 +778,18 @@ components:
       bearerFormat: JWT
       scheme: bearer
 tags:
-  - name: Admin
+  -
+    name: Admin
     description: Admin
-  - name: "API Info"
-    description: "API Info"
-  - name: "Application Management"
-    description: "Application Management"
-  - name: "Client Management"
-    description: "Client Management"
-  - name: "SDP Exchange"
-    description: "SDP Exchange"
+  -
+    name: 'API Info'
+    description: 'API Info'
+  -
+    name: 'Application Management'
+    description: 'Application Management'
+  -
+    name: 'Client Management'
+    description: 'Client Management'
+  -
+    name: 'SDP Exchange'
+    description: 'SDP Exchange'

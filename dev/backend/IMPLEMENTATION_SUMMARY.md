@@ -12,27 +12,37 @@ OpenAPI YAML からのコード生成ではなく、**PHP アノテーション�
 1. ✅ **ApiInfoController** - API 情報取得
 2. ✅ **ApplicationManagementController** - アプリケーション管理（2 エンドポイント）
 3. ✅ **ClientManagementController** - クライアント管理（5 エンドポイント）
-4. ✅ **SDPExchangeController** - SDP 交換（4 エンドポイント、スタブ実装）
+4. ✅ **SDPExchangeController** - SDP 交換（4 エンドポイント）
 5. ✅ **AdminController** - 管理者機能（2 エンドポイント）
 
-### モデル（10 クラス以上）
+### モデル（15 クラス以上）
 
 - ✅ ApiInfo, ApplicationInfo, ClientInfo, ClientInfoWithToken
-- ✅ SDPOfferInfo, SDPAnswerInfo, PostSDPOfferInfoResponse
+- ✅ SDPOfferInfo, SDPAnswerInfo, PostSDPOfferInfoRequestBody, PostSDPOfferInfoResponse
+- ✅ SdpIdAndAnswer, SdpRoles
+- ✅ DbAppInfo, DbClientInfo, DbSdpRecord, DbSdpAnswer
 - ✅ ErrorResponse
-- ✅ DbAppInfo, DbClientInfo
 
-全てのモデルに`#[OA\Schema]`アノテーションを付与
+API 露出モデルには`#[OA\Schema]`アノテーションを付与（DB 内部 DTO は OA 属性なし）
 
-### サービス層（2 クラス）
+### サービス層（5 クラス）
 
 - ✅ AppManagementService
-- ✅ ClientManagementService
+- ✅ ClientManagementService（JWT アクセストークン発行を含む完全実装）
+- ✅ SDPExchangeService（offer/answer/取得/削除の完全実装）
+- ✅ SDPEncryptAndDecrypt（AES-256-CBC ステートレス）
+- ✅ MyJwtUtil（自前 JWT パース/発行）
 
-### リポジトリ層（2 クラス）
+### リポジトリ層（3 クラス）
 
 - ✅ AppTableRepository
 - ✅ ClientTableRepository
+- ✅ SdpTableRepository
+
+### Middleware
+
+- ✅ AuthMiddleware（Firebase Bearer 用）
+- ✅ MyJwtAuthMiddleware（自前 JWT 用、SDP 系エンドポイントを保護）
 
 ### インフラ
 
@@ -56,15 +66,15 @@ OpenAPI YAML からのコード生成ではなく、**PHP アノテーション�
 | GET      | `/`                      | API 情報取得             | ✅ 完全実装 |
 | POST     | `/apps`                  | アプリケーション作成     | ✅ 完全実装 |
 | GET      | `/apps/{appId}`          | アプリケーション情報取得 | ✅ 完全実装 |
-| PUT      | `/client_token`          | クライアントトークン取得 | ⚠️ スタブ   |
+| PUT      | `/client_token`          | クライアントトークン取得 | ✅ 完全実装 |
 | GET      | `/clients`               | クライアント一覧取得     | ✅ 完全実装 |
 | POST     | `/clients`               | クライアント登録         | ✅ 完全実装 |
 | GET      | `/clients/{clientId}`    | クライアント情報取得     | ✅ 完全実装 |
 | DELETE   | `/clients/{clientId}`    | クライアント削除         | ✅ 完全実装 |
-| POST     | `/offer`                 | SDP Offer 登録           | ⚠️ スタブ   |
-| POST     | `/answer`                | SDP Answer 登録          | ⚠️ スタブ   |
-| GET      | `/answer/{sdpId}`        | SDP Answer 取得          | ⚠️ スタブ   |
-| DELETE   | `/exchange/{sdpId}`      | SDP 交換削除             | ⚠️ スタブ   |
+| POST     | `/offer`                 | SDP Offer 登録           | ✅ 完全実装 |
+| POST     | `/answer`                | SDP Answer 登録          | ✅ 完全実装 |
+| GET      | `/answer/{sdpId}`        | SDP Answer 取得          | ✅ 完全実装 |
+| DELETE   | `/exchange/{sdpId}`      | SDP 交換削除             | ✅ 完全実装 |
 | GET      | `/admin/logs`            | ログ一覧取得             | ✅ 完全実装 |
 | GET      | `/admin/logs/{filename}` | ログ内容取得             | ✅ 完全実装 |
 
@@ -174,24 +184,23 @@ grep "operationId:" docs/openapi.yaml
 
 ## 📝 残りの作業（オプショナル）
 
-### 1. 認証機能の完全実装
+### 1. ~~認証機能の完全実装~~ — ✅ 完了
 
-- JWT 発行・検証
-- Firebase 認証統合
-- レート制限
-- 現在: スタブ実装
+- JWT 発行・検証 (`MyJwtUtil`, `MyJwtAuthMiddleware`)
+- Firebase 認証統合 (`AuthMiddleware`)
+- リフレッシュトークンによるアクセストークン発行 (`/client_token`)
 
-### 2. SDP 交換機能の完全実装
+### 2. ~~SDP 交換機能の完全実装~~ — ✅ 完了
 
-- SDPExchangeService
-- SdpTableRepository
-- 暗号化・復号化
-- 現在: スタブ実装（501 Not Implemented）
+- `SDPExchangeService` (provider/subscriber マッチング、ロングポーリング)
+- `SdpTableRepository` (offer/answer の DB 永続化)
+- `SDPEncryptAndDecrypt` (AES-256-CBC、ユーザー ID から導出した鍵で SDP を暗号化)
 
 ### 3. テスト
 
 - ユニットテスト
 - 統合テスト
+- 現在: 未着手
 
 ## 🎉 成果
 
