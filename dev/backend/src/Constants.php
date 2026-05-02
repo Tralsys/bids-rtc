@@ -45,8 +45,12 @@ final class Constants
   // User Roles
   public const ROLE_ADMIN = 'admin';
 
+  // Request Headers
+  public const HEADER_CLIENT_ID = 'X-Client-Id';
+
   // Request Attribute Names (set by middleware)
   public const ATTR_NAME_UID = 'uid';
   public const ATTR_NAME_CLIENT_ID = 'clientId';
+  public const ATTR_NAME_CLIENT_ID_FROM_TOKEN = 'clientIdFromToken';
   public const ATTR_NAME_USER_ROLE = 'userRole';
 }

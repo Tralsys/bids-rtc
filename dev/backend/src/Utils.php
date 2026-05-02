@@ -6,6 +6,8 @@ namespace BidsRtc\Backend;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
 
 Utils::init();
 
@@ -116,5 +118,65 @@ final class Utils
   public static function getHashedUserId(string $userId): string
   {
     return hash('sha256', $userId);
+  }
+
+  /**
+   * X-Client-Id ヘッダから UUID を取得する（無効または存在しない場合は null）
+   */
+  public static function getClientIdFromHeaderOrNull(ServerRequestInterface $request): ?UuidInterface
+  {
+    $headerValue = $request->getHeaderLine(Constants::HEADER_CLIENT_ID);
+    if ($headerValue === '') {
+      return null;
+    }
+    if (!Uuid::isValid($headerValue)) {
+      return null;
+    }
+    try {
+      return Uuid::fromString($headerValue);
+    } catch (\Throwable) {
+      return null;
+    }
+  }
+
+  /**
+   * X-Client-Id ヘッダが不正な場合の 400 エラーレスポンスを返す
+   */
+  public static function withHeaderClientIdError(ResponseInterface $response): ResponseInterface
+  {
+    return self::withError($response, 400, 'Invalid X-Client-Id header');
+  }
+
+  /**
+   * DB の DATETIME(6) 形式文字列を DateTime オブジェクトに変換する
+   * "Y-m-d H:i:s.u" および "Y-m-d H:i:s" の両形式に対応。タイムゾーンは UTC。
+   */
+  public static function dbDateStrToDateTime(string $dateStr): \DateTime
+  {
+    $tz = self::$UTC;
+    $dt = \DateTime::createFromFormat('Y-m-d H:i:s.u', $dateStr, $tz);
+    if ($dt !== false) {
+      return $dt;
+    }
+    $dt = \DateTime::createFromFormat('Y-m-d H:i:s', $dateStr, $tz);
+    if ($dt !== false) {
+      return $dt;
+    }
+    return new \DateTime($dateStr, $tz);
+  }
+
+  /**
+   * バイナリ 16 バイトの UUID をパースする（null または 16 バイト以外は null を返す）
+   */
+  public static function uuidFromBytesOrNull(?string $bytes): ?UuidInterface
+  {
+    if ($bytes === null || strlen($bytes) !== 16) {
+      return null;
+    }
+    try {
+      return Uuid::fromBytes($bytes);
+    } catch (\Throwable) {
+      return null;
+    }
   }
 }

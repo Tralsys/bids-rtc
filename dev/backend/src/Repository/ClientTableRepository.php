@@ -149,7 +149,7 @@ class ClientTableRepository
   {
     try {
       $query = $this->db->prepare(<<<SQL
-                SELECT `refresh_token_hash`
+                SELECT `refresh_token` AS `refresh_token_hash`
                 FROM `clients`
                 WHERE `user_id` = :hashed_user_id
                     AND `client_id` = :client_id
@@ -187,10 +187,10 @@ class ClientTableRepository
       $query = $this->db->prepare(<<<SQL
                 INSERT INTO `clients` (
                     `user_id`, `client_id`, `app_id`, `name`,
-                    `refresh_token_hash`, `created_at`
+                    `refresh_token`, `created_at`
                 ) VALUES (
                     :user_id, :client_id, :app_id, :name,
-                    :refresh_token_hash, :created_at
+                    :refresh_token, :created_at
                 )
                 SQL,
       );
@@ -199,7 +199,7 @@ class ClientTableRepository
       $query->bindValue(':client_id', $client_id->getBytes(), PDO::PARAM_STR);
       $query->bindValue(':app_id', $app_id->getBytes(), PDO::PARAM_STR);
       $query->bindValue(':name', $name, PDO::PARAM_STR);
-      $query->bindValue(':refresh_token_hash', $refreshTokenHash, PDO::PARAM_STR);
+      $query->bindValue(':refresh_token', $refreshTokenHash, PDO::PARAM_STR);
       $query->bindValue(':created_at', Utils::getUtcNow()->format('Y-m-d H:i:s'), PDO::PARAM_STR);
 
       $query->execute();
