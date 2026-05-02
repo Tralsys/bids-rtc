@@ -1,0 +1,26 @@
+FROM php:8.3-cli
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    unzip \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install PHP extensions
+RUN docker-php-ext-install pdo_mysql
+
+# Copy Composer from official image
+COPY --from=composer:2.8.2 /usr/bin/composer /usr/bin/composer
+
+WORKDIR /app
+
+# Copy only dependency manifests first for layer caching
+COPY composer.json composer.lock ./
+
+# Install all dependencies including dev (phpunit etc.)
+RUN composer install --no-interaction --prefer-dist
+
+# src/ and tests/ are bind-mounted at runtime — do not COPY them here
+
+CMD ["vendor/bin/phpunit"]

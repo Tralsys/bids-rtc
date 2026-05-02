@@ -1,0 +1,141 @@
+# Test environment Docker Compose stack (isolated from dev stack)
+#
+# Unit tests:   docker compose -f docker-compose.test.yml --profile unit up --abort-on-container-exit --exit-code-from unit-test
+# Integration:  docker compose -f docker-compose.test.yml --profile integration up --abort-on-container-exit --exit-code-from integration-test
+# E2E:          docker compose -f docker-compose.test.yml --profile e2e up --abort-on-container-exit --exit-code-from e2e-runner
+
+name: bids-rtc-test
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Profile: unit — pure PHP unit tests, no DB required
+  # ---------------------------------------------------------------------------
+
+  unit-test:
+    profiles: [unit]
+    build:
+      context: ./dev/backend
+      dockerfile: Dockerfile.test
+    working_dir: /app
+    command: vendor/bin/phpunit --testsuite=unit
+    volumes:
+      - ./dev/backend/phpunit.xml:/app/phpunit.xml:ro
+      - ./dev/backend/src:/app/src:ro
+      - ./dev/backend/tests:/app/tests:ro
+      - ./dev/backend/config:/app/config:ro
+    networks:
+      - test-internal
+
+  # ---------------------------------------------------------------------------
+  # Profile: integration — PHP tests against a real MySQL instance
+  # ---------------------------------------------------------------------------
+
+  test-mysql:
+    profiles: [integration, e2e]
+    image: mysql:8.0-oracle
+    hostname: test-mysql
+    environment:
+      MYSQL_DATABASE: signaling
+      MYSQL_USER: signaling
+      MYSQL_PASSWORD: signaling
+      MYSQL_ROOT_PASSWORD: signaling
+    volumes:
+      - ./dev/db/init_sql:/docker-entrypoint-initdb.d:ro
+      - type: tmpfs
+        target: /var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "signaling", "-psignaling"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - test-internal
+
+  integration-test:
+    profiles: [integration]
+    build:
+      context: ./dev/backend
+      dockerfile: Dockerfile.test
+    working_dir: /app
+    command: vendor/bin/phpunit --testsuite=integration
+    depends_on:
+      test-mysql:
+        condition: service_healthy
+    environment:
+      TEST_DB_HOST: test-mysql
+      TEST_DB_NAME: signaling
+      TEST_DB_USER: signaling
+      TEST_DB_PASSWORD: signaling
+    volumes:
+      - ./dev/backend/phpunit.xml:/app/phpunit.xml:ro
+      - ./dev/backend/src:/app/src:ro
+      - ./dev/backend/tests:/app/tests:ro
+      - ./dev/backend/config:/app/config:ro
+    networks:
+      - test-internal
+
+  # ---------------------------------------------------------------------------
+  # Profile: e2e — full stack: MySQL + Firebase emulator + backend + test runner
+  # ---------------------------------------------------------------------------
+
+  test-firebase:
+    profiles: [e2e]
+    build:
+      context: ./dev/firebase
+      dockerfile: Dockerfile
+    hostname: test-firebase
+    environment:
+      FIREBASE_AUTH_EMULATOR_HOST: test-firebase:9099
+    volumes:
+      - ./dev/firebase/init:/emulator/data:ro
+    networks:
+      - test-internal
+
+  e2e-backend:
+    profiles: [e2e]
+    build:
+      context: ./dev/backend
+      dockerfile: Dockerfile
+    hostname: e2e-backend
+    environment:
+      APP_ENV: test
+      FIREBASE_AUTH_EMULATOR_HOST: test-firebase:9099
+      FIREBASE_PROJECT_ID: demo-project
+    volumes:
+      - ./dev/backend/src:/var/www/html/src:ro
+      - ./dev/backend/config:/var/www/html/config:ro
+      - ./dev/backend/public:/var/www/html/public:ro
+      - /tmp/e2e-logs:/var/www/html/logs
+      - /tmp/e2e-cache:/var/www/html/cache
+    depends_on:
+      test-mysql:
+        condition: service_healthy
+      test-firebase:
+        condition: service_started
+    networks:
+      - test-internal
+
+  e2e-runner:
+    profiles: [e2e]
+    build:
+      context: ./test/e2e
+      dockerfile: Dockerfile
+    working_dir: /app
+    environment:
+      API_BASE_URL: http://e2e-backend
+      FIREBASE_EMULATOR_HOST: test-firebase:9099
+      FIREBASE_PROJECT_ID: demo-project
+    depends_on:
+      - e2e-backend
+    networks:
+      - test-internal
+
+# -----------------------------------------------------------------------------
+# Networks
+# -----------------------------------------------------------------------------
+
+networks:
+  test-internal:
+    name: bids-rtc-test-internal

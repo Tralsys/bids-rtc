@@ -12,6 +12,7 @@ use Slim\Factory\ServerRequestCreatorFactory;
 // 環境判定
 $env = match (strtolower($_SERVER['APP_ENV'] ?? getenv('APP_ENV') ?: 'prod')) {
 	'development', 'dev' => 'dev',
+	'test' => 'test',
 	default => 'prod',
 };
 
