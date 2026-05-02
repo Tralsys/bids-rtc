@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace BidsRtc\Backend\Controller;
 
 use BidsRtc\Backend\Model\SDPAnswerInfo;
+use BidsRtc\Backend\Model\SdpIdAndAnswer;
+use BidsRtc\Backend\Model\SdpRoles;
+use BidsRtc\Backend\Model\PostSDPOfferInfoRequestBody;
 use BidsRtc\Backend\Model\PostSDPOfferInfoResponse;
 use BidsRtc\Backend\Model\ErrorResponse;
 use BidsRtc\Backend\RetValueOrError;
+use BidsRtc\Backend\Service\SDPExchangeService;
 use BidsRtc\Backend\Utils;
 use OpenApi\Attributes as OA;
 use Psr\Http\Message\ResponseInterface;
@@ -21,9 +25,10 @@ use Ramsey\Uuid\Uuid;
 class SDPExchangeController
 {
   private const int MAX_SDP_BASE64_LENGTH = 12000;
+  private const int MAX_CLIENT_COUNT = 100;
 
   public function __construct(
-    // private readonly SDPExchangeService $service,
+    private readonly SDPExchangeService $service,
     private readonly LoggerInterface $logger,
   ) {
   }
@@ -38,15 +43,16 @@ class SDPExchangeController
     security: [['bearerAuth' => []]],
     tags: ['SDP Exchange']
   )]
+  #[OA\Parameter(
+    name: 'X-Client-Id',
+    in: 'header',
+    required: true,
+    description: 'クライアントID',
+    schema: new OA\Schema(type: 'string', format: 'uuid')
+  )]
   #[OA\RequestBody(
     required: true,
-    content: new OA\JsonContent(
-      required: ['offer_client_id', 'offer'],
-      properties: [
-        new OA\Property(property: 'offer_client_id', type: 'string', format: 'uuid', description: 'Offerを送信するクライアントID'),
-        new OA\Property(property: 'offer', type: 'string', description: 'SDP Offer（Base64エンコード済み）'),
-      ],
-    )
+    content: new OA\JsonContent(ref: '#/components/schemas/PostSDPOfferInfoRequestBody')
   )]
   #[OA\Response(
     response: 201,
@@ -54,16 +60,68 @@ class SDPExchangeController
     content: new OA\JsonContent(ref: '#/components/schemas/PostSDPOfferInfoResponse')
   )]
   #[OA\Response(
+    response: 400,
+    description: 'リクエストエラー',
+    content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')
+  )]
+  #[OA\Response(
     response: 401,
-    description: 'エラー',
+    description: '認証エラー',
+    content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')
+  )]
+  #[OA\Response(
+    response: 403,
+    description: '権限エラー',
     content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')
   )]
   public function registerOffer(
     ServerRequestInterface $request,
     ResponseInterface $response,
   ): ResponseInterface {
-    // TODO: 実装
-    return Utils::withError($response, 501, 'Not implemented yet');
+    $preparingResponse = $this->service->setUserIdAndClientId($request, $response);
+    if ($preparingResponse !== null) {
+      return $preparingResponse;
+    }
+
+    try {
+      $body = $request->getParsedBody();
+      if (!is_array($body)) {
+        return Utils::withError($response, 400, 'Invalid request body');
+      }
+
+      $role = (string) ($body['role'] ?? '');
+      $offer = (string) ($body['offer'] ?? '');
+      $establishedClients = $body['established_clients'] ?? null;
+
+      if (!SdpRoles::isValid($role)) {
+        return Utils::withError($response, 400, 'Invalid role');
+      }
+
+      if (strlen($offer) > self::MAX_SDP_BASE64_LENGTH) {
+        return Utils::withError($response, 400, 'Too long base64 format');
+      }
+
+      if ($establishedClients !== null && !is_array($establishedClients)) {
+        return Utils::withError($response, 400, 'established_clients must be an array');
+      }
+
+      if (is_array($establishedClients) && count($establishedClients) > self::MAX_CLIENT_COUNT) {
+        return Utils::withError($response, 400, 'Too many clients');
+      }
+
+      $result = $this->service->registerOfferAndGetAnswerableOffers(
+        $role,
+        $offer,
+        $establishedClients ?? [],
+      );
+
+      return Utils::withJson($response, $result, 201);
+    } catch (RetValueOrError $e) {
+      return $e->getResponseWithJson($response);
+    } catch (\Exception $e) {
+      $this->logger->error($e->getMessage());
+      return Utils::withError($response, 500, $e->getMessage());
+    }
   }
 
   /**
@@ -76,15 +134,18 @@ class SDPExchangeController
     security: [['bearerAuth' => []]],
     tags: ['SDP Exchange']
   )]
+  #[OA\Parameter(
+    name: 'X-Client-Id',
+    in: 'header',
+    required: true,
+    description: 'クライアントID',
+    schema: new OA\Schema(type: 'string', format: 'uuid')
+  )]
   #[OA\RequestBody(
     required: true,
     content: new OA\JsonContent(
-      required: ['sdp_id', 'answer_client_id', 'answer'],
-      properties: [
-        new OA\Property(property: 'sdp_id', type: 'string', format: 'uuid', description: 'SDP交換ID'),
-        new OA\Property(property: 'answer_client_id', type: 'string', format: 'uuid', description: 'Answerを送信するクライアントID'),
-        new OA\Property(property: 'answer', type: 'string', description: 'SDP Answer（Base64エンコード済み）'),
-      ],
+      type: 'array',
+      items: new OA\Items(ref: '#/components/schemas/SDPAnswerInfo')
     )
   )]
   #[OA\Response(
@@ -92,16 +153,81 @@ class SDPExchangeController
     description: 'Answer登録成功'
   )]
   #[OA\Response(
+    response: 400,
+    description: 'リクエストエラー',
+    content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')
+  )]
+  #[OA\Response(
     response: 401,
-    description: 'エラー',
+    description: '認証エラー',
+    content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')
+  )]
+  #[OA\Response(
+    response: 403,
+    description: '権限エラー',
+    content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')
+  )]
+  #[OA\Response(
+    response: 404,
+    description: 'SDP IDが見つからない',
     content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')
   )]
   public function registerAnswer(
     ServerRequestInterface $request,
     ResponseInterface $response,
   ): ResponseInterface {
-    // TODO: 実装
-    return Utils::withError($response, 501, 'Not implemented yet');
+    $preparingResponse = $this->service->setUserIdAndClientId($request, $response);
+    if ($preparingResponse !== null) {
+      return $preparingResponse;
+    }
+
+    try {
+      $body = $request->getParsedBody();
+      if (!is_array($body)) {
+        $body = [];
+      }
+
+      // 配列形式であることを確認 (連想配列は reject)
+      if (!array_is_list($body) && count($body) > 0) {
+        return Utils::withError($response, 400, 'Request body must be an array');
+      }
+
+      if (count($body) > self::MAX_CLIENT_COUNT) {
+        return Utils::withError($response, 400, 'Too many clients');
+      }
+
+      /** @var SdpIdAndAnswer[] $answerArray */
+      $answerArray = [];
+      foreach ($body as $v) {
+        if (!is_array($v)) {
+          return Utils::withError($response, 400, 'Invalid format request');
+        }
+
+        $sdpIdStr = (string) ($v['sdp_id'] ?? '');
+        $base64Answer = (string) ($v['answer'] ?? '');
+
+        if (!Uuid::isValid($sdpIdStr)) {
+          return Utils::withUuidError($response);
+        }
+
+        if (strlen($base64Answer) > self::MAX_SDP_BASE64_LENGTH) {
+          return Utils::withError($response, 400, 'Too long base64 format');
+        }
+
+        $answerArray[] = SdpIdAndAnswer::fromArray($v);
+      }
+
+      $this->service->registerAnswer($answerArray);
+
+      return $response->withStatus(201);
+    } catch (\InvalidArgumentException $e) {
+      return Utils::withError($response, 400, 'Invalid format request');
+    } catch (RetValueOrError $e) {
+      return $e->getResponseWithJson($response);
+    } catch (\Exception $e) {
+      $this->logger->error($e->getMessage());
+      return Utils::withError($response, 500, $e->getMessage());
+    }
   }
 
   /**
@@ -113,6 +239,13 @@ class SDPExchangeController
     summary: 'SDP Answerを取得',
     security: [['bearerAuth' => []]],
     tags: ['SDP Exchange']
+  )]
+  #[OA\Parameter(
+    name: 'X-Client-Id',
+    in: 'header',
+    required: true,
+    description: 'クライアントID',
+    schema: new OA\Schema(type: 'string', format: 'uuid')
   )]
   #[OA\Parameter(
     name: 'sdpId',
@@ -128,11 +261,21 @@ class SDPExchangeController
   )]
   #[OA\Response(
     response: 204,
-    description: 'Answer未登録'
+    description: 'Answer未登録 (タイムアウト)'
+  )]
+  #[OA\Response(
+    response: 400,
+    description: 'リクエストエラー',
+    content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')
   )]
   #[OA\Response(
     response: 401,
-    description: 'エラー',
+    description: '認証エラー',
+    content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')
+  )]
+  #[OA\Response(
+    response: 403,
+    description: '権限エラー',
     content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')
   )]
   #[OA\Response(
@@ -145,8 +288,29 @@ class SDPExchangeController
     ResponseInterface $response,
     array $args,
   ): ResponseInterface {
-    // TODO: 実装
-    return Utils::withError($response, 501, 'Not implemented yet');
+    $preparingResponse = $this->service->setUserIdAndClientId($request, $response);
+    if ($preparingResponse !== null) {
+      return $preparingResponse;
+    }
+
+    $sdpIdStr = $args['sdpId'] ?? '';
+    if (!Uuid::isValid($sdpIdStr)) {
+      return Utils::withUuidError($response);
+    }
+    $sdpId = Uuid::fromString($sdpIdStr);
+
+    try {
+      $answer = $this->service->getAnswer($sdpId);
+      return Utils::withJson($response, $answer, 200);
+    } catch (RetValueOrError $e) {
+      if ($e->getCode() === 204) {
+        return $response->withStatus(204);
+      }
+      return $e->getResponseWithJson($response);
+    } catch (\Exception $e) {
+      $this->logger->error($e->getMessage());
+      return Utils::withError($response, 500, $e->getMessage());
+    }
   }
 
   /**
@@ -166,12 +330,34 @@ class SDPExchangeController
     description: 'SDP交換ID',
     schema: new OA\Schema(type: 'string', format: 'uuid')
   )]
+  #[OA\Parameter(
+    name: 'X-Client-Id',
+    in: 'header',
+    required: true,
+    description: 'クライアントID',
+    schema: new OA\Schema(type: 'string', format: 'uuid')
+  )]
   #[OA\Response(
     response: 204,
     description: '削除成功'
   )]
   #[OA\Response(
+    response: 400,
+    description: 'リクエストエラー',
+    content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')
+  )]
+  #[OA\Response(
     response: 401,
+    description: '認証エラー',
+    content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')
+  )]
+  #[OA\Response(
+    response: 403,
+    description: '権限エラー',
+    content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')
+  )]
+  #[OA\Response(
+    response: 404,
     description: 'エラー',
     content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')
   )]
@@ -180,7 +366,28 @@ class SDPExchangeController
     ResponseInterface $response,
     array $args,
   ): ResponseInterface {
-    // TODO: 実装
-    return Utils::withError($response, 501, 'Not implemented yet');
+    $preparingResponse = $this->service->setUserIdAndClientId($request, $response);
+    if ($preparingResponse !== null) {
+      return $preparingResponse;
+    }
+
+    $sdpIdStr = $args['sdpId'] ?? '';
+    if (!Uuid::isValid($sdpIdStr)) {
+      return Utils::withUuidError($response);
+    }
+    $sdpId = Uuid::fromString($sdpIdStr);
+
+    try {
+      if ($this->service->deleteSDPExchange($sdpId)) {
+        return $response->withStatus(204);
+      } else {
+        return Utils::withError($response, 404, 'Not found');
+      }
+    } catch (RetValueOrError $e) {
+      return $e->getResponseWithJson($response);
+    } catch (\Exception $e) {
+      $this->logger->error($e->getMessage());
+      return Utils::withError($response, 500, $e->getMessage());
+    }
   }
 }
